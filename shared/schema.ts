@@ -1,0 +1,203 @@
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const devices = pgTable("devices", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  type: text("type").notNull(), // laptop, desktop, smartphone, tablet
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  serialNumber: text("serial_number"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const tickets = pgTable("tickets", {
+  id: serial("id").primaryKey(),
+  ticketNumber: text("ticket_number").notNull().unique(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  deviceId: integer("device_id").notNull().references(() => devices.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("received"), // received, diagnosed, awaiting_parts, in_progress, ready_for_pickup, completed
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }),
+  finalCost: decimal("final_cost", { precision: 10, scale: 2 }),
+  isPaid: boolean("is_paid").default(false),
+  paymentMethod: text("payment_method"),
+  paymentDate: timestamp("payment_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const partsOrders = pgTable("parts_orders", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  partName: text("part_name").notNull(),
+  supplier: text("supplier"),
+  orderNumber: text("order_number"),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  quantity: integer("quantity").default(1),
+  status: text("status").notNull().default("ordered"), // ordered, in_transit, delivered, installed
+  orderDate: timestamp("order_date").defaultNow().notNull(),
+  expectedDate: timestamp("expected_date"),
+  receivedDate: timestamp("received_date"),
+  notes: text("notes"),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  type: text("type").notNull(), // status_change, note_added, part_ordered, payment_received, etc.
+  description: text("description").notNull(),
+  details: jsonb("details"), // Additional structured data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: text("created_by").notNull().default("System"),
+});
+
+export const reminders = pgTable("reminders", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => tickets.id),
+  clientId: integer("client_id").references(() => clients.id),
+  type: text("type").notNull(), // follow_up, warranty_expiry, maintenance, custom
+  title: text("title").notNull(),
+  description: text("description"),
+  dueDate: timestamp("due_date").notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relations
+export const clientsRelations = relations(clients, ({ many }) => ({
+  devices: many(devices),
+  tickets: many(tickets),
+  reminders: many(reminders),
+}));
+
+export const devicesRelations = relations(devices, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [devices.clientId],
+    references: [clients.id],
+  }),
+  tickets: many(tickets),
+}));
+
+export const ticketsRelations = relations(tickets, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [tickets.clientId],
+    references: [clients.id],
+  }),
+  device: one(devices, {
+    fields: [tickets.deviceId],
+    references: [devices.id],
+  }),
+  partsOrders: many(partsOrders),
+  activityLogs: many(activityLogs),
+  reminders: many(reminders),
+}));
+
+export const partsOrdersRelations = relations(partsOrders, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [partsOrders.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [activityLogs.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const remindersRelations = relations(reminders, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [reminders.ticketId],
+    references: [tickets.id],
+  }),
+  client: one(clients, {
+    fields: [reminders.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Insert schemas
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDeviceSchema = createInsertSchema(devices).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  ticketNumber: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
+  id: true,
+  orderDate: true,
+  receivedDate: true,
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReminderSchema = createInsertSchema(reminders).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
+// Types
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type InsertDevice = z.infer<typeof insertDeviceSchema>;
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type InsertReminder = z.infer<typeof insertReminderSchema>;
+
+export type Client = typeof clients.$inferSelect;
+export type Device = typeof devices.$inferSelect;
+export type Ticket = typeof tickets.$inferSelect;
+export type PartsOrder = typeof partsOrders.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type Reminder = typeof reminders.$inferSelect;
+
+// Extended types with relations
+export type TicketWithRelations = Ticket & {
+  client: Client;
+  device: Device;
+  partsOrders: PartsOrder[];
+  activityLogs: ActivityLog[];
+};
+
+export type ClientWithDevices = Client & {
+  devices: Device[];
+};
+
+export type DeviceWithClient = Device & {
+  client: Client;
+};
