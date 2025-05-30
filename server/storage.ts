@@ -1,8 +1,8 @@
 import { 
-  clients, devices, tickets, partsOrders, activityLogs, reminders,
-  type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type Reminder,
+  clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders,
+  type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
-  type InsertActivityLog, type InsertReminder, type TicketWithRelations, type ClientWithDevices
+  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql } from "drizzle-orm";
@@ -43,6 +43,12 @@ export interface IStorage {
   // Activity Logs
   getActivityLogs(ticketId: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+
+  // Repair Notes
+  getRepairNotes(ticketId: number): Promise<RepairNote[]>;
+  createRepairNote(note: InsertRepairNote): Promise<RepairNote>;
+  updateRepairNote(id: number, note: Partial<InsertRepairNote>): Promise<RepairNote>;
+  deleteRepairNote(id: number): Promise<void>;
 
   // Reminders
   getReminders(): Promise<Reminder[]>;
@@ -145,6 +151,9 @@ export class DatabaseStorage implements IStorage {
         partsOrders: true,
         activityLogs: {
           orderBy: [desc(activityLogs.createdAt)],
+        },
+        repairNotes: {
+          orderBy: [desc(repairNotes.createdAt)],
         },
       },
       orderBy: [desc(tickets.createdAt)],

@@ -68,6 +68,21 @@ export const activityLogs = pgTable("activity_logs", {
   createdBy: text("created_by").notNull().default("System"),
 });
 
+export const repairNotes = pgTable("repair_notes", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  type: text("type").notNull(), // diagnostic, test_result, repair_step, observation, issue_found
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  technicianName: text("technician_name").notNull(),
+  isResolved: boolean("is_resolved").default(false),
+  priority: text("priority").notNull().default("normal"), // low, normal, high, critical
+  tags: text("tags").array(), // Array of tags like "hardware", "software", "driver", etc.
+  attachments: jsonb("attachments"), // Store file paths or references
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const reminders = pgTable("reminders", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").references(() => tickets.id),
@@ -107,6 +122,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   }),
   partsOrders: many(partsOrders),
   activityLogs: many(activityLogs),
+  repairNotes: many(repairNotes),
   reminders: many(reminders),
 }));
 
@@ -120,6 +136,13 @@ export const partsOrdersRelations = relations(partsOrders, ({ one }) => ({
 export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   ticket: one(tickets, {
     fields: [activityLogs.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const repairNotesRelations = relations(repairNotes, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [repairNotes.ticketId],
     references: [tickets.id],
   }),
 }));
@@ -165,6 +188,12 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true,
 });
 
+export const insertRepairNoteSchema = createInsertSchema(repairNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertReminderSchema = createInsertSchema(reminders).omit({
   id: true,
   createdAt: true,
@@ -177,6 +206,7 @@ export type InsertDevice = z.infer<typeof insertDeviceSchema>;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type InsertRepairNote = z.infer<typeof insertRepairNoteSchema>;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
 
 export type Client = typeof clients.$inferSelect;
@@ -184,6 +214,7 @@ export type Device = typeof devices.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
 export type PartsOrder = typeof partsOrders.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+export type RepairNote = typeof repairNotes.$inferSelect;
 export type Reminder = typeof reminders.$inferSelect;
 
 // Extended types with relations
@@ -192,6 +223,7 @@ export type TicketWithRelations = Ticket & {
   device: Device;
   partsOrders: PartsOrder[];
   activityLogs: ActivityLog[];
+  repairNotes: RepairNote[];
 };
 
 export type ClientWithDevices = Client & {
