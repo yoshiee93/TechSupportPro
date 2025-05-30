@@ -23,8 +23,8 @@ export function useCreateRepairNote() {
     mutationFn: async (data: any) => {
       return await apiRequest("POST", "/api/repair-notes", data);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets", data.ticketId, "repair-notes"] });
+    onSuccess: (newNote: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", newNote.ticketId, "repair-notes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
     },
   });
@@ -37,8 +37,8 @@ export function useUpdateRepairNote(id: number) {
     mutationFn: async (data: any) => {
       return await apiRequest("PUT", `/api/repair-notes/${id}`, data);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tickets", data.ticketId, "repair-notes"] });
+    onSuccess: (updatedNote: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets", updatedNote.ticketId, "repair-notes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
     },
   });

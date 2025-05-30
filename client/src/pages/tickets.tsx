@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TicketForm from "@/components/ticket/ticket-form";
+import RepairNotesList from "@/components/repair/repair-notes-list";
 import { format } from "date-fns";
 import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin } from "lucide-react";
 
@@ -277,6 +278,11 @@ export default function Tickets() {
                     )}
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* Repair Notes */}
+              <div className="border-t pt-6">
+                <RepairNotesList ticketId={selectedTicket.id} />
               </div>
 
               {/* Activity Log */}
