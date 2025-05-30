@@ -170,6 +170,9 @@ export class DatabaseStorage implements IStorage {
         activityLogs: {
           orderBy: [desc(activityLogs.createdAt)],
         },
+        repairNotes: {
+          orderBy: [desc(repairNotes.createdAt)],
+        },
       },
     });
     return ticket || undefined;
@@ -184,6 +187,9 @@ export class DatabaseStorage implements IStorage {
         partsOrders: true,
         activityLogs: {
           orderBy: [desc(activityLogs.createdAt)],
+        },
+        repairNotes: {
+          orderBy: [desc(repairNotes.createdAt)],
         },
       },
     });
@@ -254,6 +260,9 @@ export class DatabaseStorage implements IStorage {
         partsOrders: true,
         activityLogs: {
           orderBy: [desc(activityLogs.createdAt)],
+        },
+        repairNotes: {
+          orderBy: [desc(repairNotes.createdAt)],
         },
       },
       orderBy: [desc(tickets.createdAt)],
@@ -327,6 +336,45 @@ export class DatabaseStorage implements IStorage {
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
     const [activityLog] = await db.insert(activityLogs).values(log).returning();
     return activityLog;
+  }
+
+  // Repair Notes
+  async getRepairNotes(ticketId: number): Promise<RepairNote[]> {
+    return await db
+      .select()
+      .from(repairNotes)
+      .where(eq(repairNotes.ticketId, ticketId))
+      .orderBy(desc(repairNotes.createdAt));
+  }
+
+  async createRepairNote(insertRepairNote: InsertRepairNote): Promise<RepairNote> {
+    const [repairNote] = await db.insert(repairNotes).values(insertRepairNote).returning();
+    
+    // Create activity log
+    await this.createActivityLog({
+      ticketId: repairNote.ticketId,
+      type: "repair_note_added",
+      description: `Repair note added: ${repairNote.title}`,
+      createdBy: repairNote.technicianName,
+    });
+
+    return repairNote;
+  }
+
+  async updateRepairNote(id: number, repairNote: Partial<InsertRepairNote>): Promise<RepairNote> {
+    const [updated] = await db
+      .update(repairNotes)
+      .set({ 
+        ...repairNote,
+        updatedAt: new Date(),
+      })
+      .where(eq(repairNotes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRepairNote(id: number): Promise<void> {
+    await db.delete(repairNotes).where(eq(repairNotes.id, id));
   }
 
   // Reminders

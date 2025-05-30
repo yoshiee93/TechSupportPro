@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertReminderSchema } from "@shared/schema";
+import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertRepairNoteSchema, insertReminderSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -290,6 +290,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(logs);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch activity logs" });
+    }
+  });
+
+  // Repair Notes
+  app.get("/api/tickets/:ticketId/repair-notes", async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const notes = await storage.getRepairNotes(ticketId);
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch repair notes" });
+    }
+  });
+
+  app.post("/api/repair-notes", async (req, res) => {
+    try {
+      const repairNoteData = insertRepairNoteSchema.parse(req.body);
+      const repairNote = await storage.createRepairNote(repairNoteData);
+      res.status(201).json(repairNote);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid repair note data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create repair note" });
+    }
+  });
+
+  app.put("/api/repair-notes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const repairNoteData = insertRepairNoteSchema.partial().parse(req.body);
+      const repairNote = await storage.updateRepairNote(id, repairNoteData);
+      res.json(repairNote);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid repair note data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update repair note" });
+    }
+  });
+
+  app.delete("/api/repair-notes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteRepairNote(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete repair note" });
     }
   });
 
