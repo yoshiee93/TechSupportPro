@@ -96,6 +96,20 @@ export const reminders = pgTable("reminders", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const timeLogs = pgTable("time_logs", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  technicianName: text("technician_name").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // Duration in seconds
+  description: text("description"), // What was worked on during this time
+  billable: boolean("billable").default(true),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }), // Rate per hour
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const clientsRelations = relations(clients, ({ many }) => ({
   devices: many(devices),
@@ -124,6 +138,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   activityLogs: many(activityLogs),
   repairNotes: many(repairNotes),
   reminders: many(reminders),
+  timeLogs: many(timeLogs),
 }));
 
 export const partsOrdersRelations = relations(partsOrders, ({ one }) => ({
@@ -155,6 +170,13 @@ export const remindersRelations = relations(reminders, ({ one }) => ({
   client: one(clients, {
     fields: [reminders.clientId],
     references: [clients.id],
+  }),
+}));
+
+export const timeLogsRelations = relations(timeLogs, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [timeLogs.ticketId],
+    references: [tickets.id],
   }),
 }));
 
@@ -200,6 +222,12 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
   completedAt: true,
 });
 
+export const insertTimeLogSchema = createInsertSchema(timeLogs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
@@ -208,6 +236,7 @@ export type InsertPartsOrder = z.infer<typeof insertPartsOrderSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertRepairNote = z.infer<typeof insertRepairNoteSchema>;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
+export type InsertTimeLog = z.infer<typeof insertTimeLogSchema>;
 
 export type Client = typeof clients.$inferSelect;
 export type Device = typeof devices.$inferSelect;
@@ -216,6 +245,7 @@ export type PartsOrder = typeof partsOrders.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type RepairNote = typeof repairNotes.$inferSelect;
 export type Reminder = typeof reminders.$inferSelect;
+export type TimeLog = typeof timeLogs.$inferSelect;
 
 // Extended types with relations
 export type TicketWithRelations = Ticket & {
@@ -224,6 +254,7 @@ export type TicketWithRelations = Ticket & {
   partsOrders: PartsOrder[];
   activityLogs: ActivityLog[];
   repairNotes: RepairNote[];
+  timeLogs: TimeLog[];
 };
 
 export type ClientWithDevices = Client & {
