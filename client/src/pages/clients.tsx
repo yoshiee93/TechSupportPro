@@ -323,158 +323,26 @@ export default function Clients() {
               {/* Devices */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Devices ({selectedClient.devices.length})</CardTitle>
-                    <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Device
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Add Device for {selectedClient.name}</DialogTitle>
-                        </DialogHeader>
-                        
-                        <Form {...deviceForm}>
-                          <form onSubmit={deviceForm.handleSubmit(onSubmitDevice)} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={deviceForm.control}
-                                name="type"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Device Type</FormLabel>
-                                    <Select onValueChange={field.onChange}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="laptop">Laptop</SelectItem>
-                                        <SelectItem value="desktop">Desktop</SelectItem>
-                                        <SelectItem value="smartphone">Smartphone</SelectItem>
-                                        <SelectItem value="tablet">Tablet</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={deviceForm.control}
-                                name="brand"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Brand</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="e.g., Apple, Dell, HP" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <FormField
-                              control={deviceForm.control}
-                              name="model"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Model</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="e.g., MacBook Pro 13, OptiPlex 7070" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={deviceForm.control}
-                              name="serialNumber"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Serial Number</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Device serial number" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={deviceForm.control}
-                              name="notes"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Notes</FormLabel>
-                                  <FormControl>
-                                    <Textarea placeholder="Additional device information..." {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <div className="flex justify-end space-x-3">
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => setIsAddDeviceOpen(false)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button type="submit" disabled={createDeviceMutation.isPending}>
-                                {createDeviceMutation.isPending ? "Adding..." : "Add Device"}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  <CardTitle className="text-base">Devices ({selectedClient.devices.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {selectedClient.devices.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">No devices registered</p>
                   ) : (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3">
                       {selectedClient.devices.map((device: any) => (
-                        <Card key={device.id} className="p-3 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3">
-                              {getDeviceIcon(device.type)}
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <p className="font-medium">{device.brand} {device.model}</p>
-                                  <Badge className={getTypeColor(device.type)} variant="secondary">
-                                    {device.type}
-                                  </Badge>
-                                </div>
-                                {device.serialNumber && (
-                                  <div className="flex items-center space-x-1 mt-1">
-                                    <Hash className="w-3 h-3 text-gray-400" />
-                                    <span className="text-xs text-gray-500 font-mono">{device.serialNumber}</span>
-                                  </div>
-                                )}
-                                {device.notes && (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{device.notes}</p>
-                                )}
-                                <p className="text-xs text-gray-400 mt-1">
-                                  Added {format(new Date(device.createdAt), "MMM d, yyyy")}
-                                </p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                        <div key={device.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{device.brand} {device.model}</p>
+                            <p className="text-sm text-gray-600 capitalize">{device.type}</p>
+                            {device.serialNumber && (
+                              <p className="text-xs text-gray-500 font-mono">{device.serialNumber}</p>
+                            )}
                           </div>
-                        </Card>
+                          <Button variant="ghost" size="sm">
+                            View Details
+                          </Button>
+                        </div>
                       ))}
                     </div>
                   )}
