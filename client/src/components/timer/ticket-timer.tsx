@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, Square, Clock, User } from "lucide-react";
 import { useActiveTimeLog, useCreateTimeLog, useStopTimeLog, useTimeLogs } from "@/hooks/use-time-logs";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -14,10 +15,12 @@ interface TicketTimerProps {
 }
 
 export default function TicketTimer({ ticketId }: TicketTimerProps) {
-  const [technicianName, setTechnicianName] = useState("Unknown");
+  const { user, isAuthenticated } = useAuth();
   const [elapsedTime, setElapsedTime] = useState(0);
   const { toast } = useToast();
 
+  const technicianName = user ? `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || (user as any).email || 'Unknown' : 'Unknown';
+  
   const { data: activeTimeLog, isLoading: isLoadingActive } = useActiveTimeLog(ticketId, technicianName);
   const { data: timeLogs, isLoading: isLoadingLogs } = useTimeLogs(ticketId);
   const createTimeLog = useCreateTimeLog();
@@ -63,8 +66,10 @@ export default function TicketTimer({ ticketId }: TicketTimerProps) {
     try {
       await createTimeLog.mutateAsync({
         ticketId,
+        userId: user?.id || "unknown",
         technicianName: technicianName.trim(),
         startTime: new Date(),
+        billable: true,
         description: `Work session started by ${technicianName.trim()}`,
       });
       toast({
