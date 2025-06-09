@@ -300,7 +300,7 @@ export class DatabaseStorage implements IStorage {
       ticketId: ticket.id,
       type: "ticket_created",
       description: "Ticket created",
-      createdBy: "System",
+      userId: "system",
     });
 
     return ticket;
@@ -324,7 +324,7 @@ export class DatabaseStorage implements IStorage {
         ticketId: id,
         type: "status_change",
         description: `Status changed from ${currentTicket.status} to ${ticket.status}`,
-        createdBy: "System",
+        userId: "system",
       });
     }
 
@@ -399,7 +399,7 @@ export class DatabaseStorage implements IStorage {
       ticketId: partsOrder.ticketId,
       type: "part_ordered",
       description: `Part ordered: ${partsOrder.partName}`,
-      createdBy: "System",
+      userId: "system",
     });
 
     return partsOrder;
@@ -452,7 +452,7 @@ export class DatabaseStorage implements IStorage {
       ticketId: repairNote.ticketId,
       type: "repair_note_added",
       description: `Repair note added: ${repairNote.title}`,
-      createdBy: repairNote.technicianName,
+      userId: "system",
     });
 
     return repairNote;
