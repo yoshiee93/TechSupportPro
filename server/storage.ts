@@ -5,7 +5,7 @@ import {
   type InsertActivityLog, type InsertRepairNote, type InsertReminder, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, and, or, like, count, sql } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Clients
@@ -107,6 +107,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteClient(id: number): Promise<void> {
+    // Get all tickets for this client's devices to cascade delete properly
+    const clientDevices = await db.select().from(devices).where(eq(devices.clientId, id));
+    const deviceIds = clientDevices.map(device => device.id);
+    
+    if (deviceIds.length > 0) {
+      // Get all tickets for these devices
+      const clientTickets = await db.select().from(tickets).where(inArray(tickets.deviceId, deviceIds));
+      const ticketIds = clientTickets.map(ticket => ticket.id);
+      
+      if (ticketIds.length > 0) {
+        // Delete ticket-related records
+        await db.delete(repairNotes).where(inArray(repairNotes.ticketId, ticketIds));
+        await db.delete(partsOrders).where(inArray(partsOrders.ticketId, ticketIds));
+        await db.delete(activityLogs).where(inArray(activityLogs.ticketId, ticketIds));
+        await db.delete(tickets).where(inArray(tickets.id, ticketIds));
+      }
+      
+      // Delete devices
+      await db.delete(devices).where(eq(devices.clientId, id));
+    }
+    
+    // Finally delete the client
     await db.delete(clients).where(eq(clients.id, id));
   }
 
@@ -244,6 +266,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTicket(id: number): Promise<void> {
+    // Delete related records first due to foreign key constraints
+    await db.delete(repairNotes).where(eq(repairNotes.ticketId, id));
+    await db.delete(partsOrders).where(eq(partsOrders.ticketId, id));
+    await db.delete(activityLogs).where(eq(activityLogs.ticketId, id));
+    
+    // Finally delete the ticket
     await db.delete(tickets).where(eq(tickets.id, id));
   }
 
