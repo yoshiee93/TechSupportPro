@@ -1,7 +1,31 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table with role-based access
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: text("role").notNull().default("technician"), // admin, technician
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
@@ -61,16 +85,18 @@ export const partsOrders = pgTable("parts_orders", {
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // status_change, note_added, part_ordered, payment_received, etc.
   description: text("description").notNull(),
   details: jsonb("details"), // Additional structured data
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  createdBy: text("created_by").notNull().default("System"),
+  createdBy: text("created_by").notNull(),
 });
 
 export const repairNotes = pgTable("repair_notes", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // diagnostic, test_result, repair_step, observation, issue_found
   title: text("title").notNull(),
   content: text("content").notNull(),
@@ -99,6 +125,7 @@ export const reminders = pgTable("reminders", {
 export const timeLogs = pgTable("time_logs", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   technicianName: text("technician_name").notNull(),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
@@ -208,12 +235,14 @@ export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   createdAt: true,
+  createdBy: true,
 });
 
 export const insertRepairNoteSchema = createInsertSchema(repairNotes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  technicianName: true,
 });
 
 export const insertReminderSchema = createInsertSchema(reminders).omit({
@@ -224,6 +253,7 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
 
 export const insertTimeLogSchema = z.object({
   ticketId: z.number(),
+  userId: z.string(),
   technicianName: z.string(),
   startTime: z.date(),
   endTime: z.date().optional(),
