@@ -1,6 +1,6 @@
 import { 
-  clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs,
-  type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
+  users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs,
+  type User, type UpsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
   type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
@@ -87,6 +87,48 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.isActive, true));
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ role: role as "admin" | "technician", updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deactivateUser(id: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
   // Clients
   async getClients(): Promise<ClientWithDevices[]> {
     return await db.query.clients.findMany({
