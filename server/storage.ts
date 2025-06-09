@@ -8,6 +8,13 @@ import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(id: string, role: string): Promise<User>;
+  deactivateUser(id: string): Promise<User>;
+
   // Clients
   getClients(): Promise<ClientWithDevices[]>;
   getClient(id: number): Promise<ClientWithDevices | undefined>;

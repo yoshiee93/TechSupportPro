@@ -263,7 +263,20 @@ export const insertTimeLogSchema = z.object({
   hourlyRate: z.string().optional(),
 });
 
+// User schemas
+export const upsertUserSchema = z.object({
+  id: z.string(),
+  email: z.string().email().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  profileImageUrl: z.string().optional(),
+  role: z.enum(["admin", "technician"]).default("technician"),
+  isActive: z.boolean().default(true),
+});
+
 // Types
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type User = typeof users.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
