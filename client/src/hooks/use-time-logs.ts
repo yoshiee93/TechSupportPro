@@ -1,21 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import type { TimeLog, InsertTimeLog } from "@shared/schema";
 
 export function useTimeLogs(ticketId: number) {
-  return useQuery({
+  return useQuery<TimeLog[]>({
     queryKey: ["/api/time-logs", ticketId],
-    queryFn: () => apiRequest<TimeLog[]>({ url: `/api/time-logs/${ticketId}`, on401: "throw" }),
+    queryFn: async () => {
+      const response = await fetch(`/api/time-logs/${ticketId}`, { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch time logs: ${response.statusText}`);
+      }
+      return response.json();
+    },
   });
 }
 
 export function useActiveTimeLog(ticketId: number, technicianName: string = "Unknown") {
-  return useQuery({
+  return useQuery<TimeLog | null>({
     queryKey: ["/api/time-logs", ticketId, "active", technicianName],
-    queryFn: () => apiRequest<TimeLog | null>({ 
-      url: `/api/time-logs/${ticketId}/active?technician=${encodeURIComponent(technicianName)}`, 
-      on401: "throw" 
-    }),
+    queryFn: async () => {
+      const response = await fetch(`/api/time-logs/${ticketId}/active?technician=${encodeURIComponent(technicianName)}`, { 
+        credentials: "include" 
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch active time log: ${response.statusText}`);
+      }
+      return response.json();
+    },
     refetchInterval: 5000, // Refresh every 5 seconds to keep timer updated
   });
 }
@@ -23,15 +33,20 @@ export function useActiveTimeLog(ticketId: number, technicianName: string = "Unk
 export function useCreateTimeLog() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: (timeLogData: InsertTimeLog) =>
-      apiRequest<TimeLog>({
-        url: "/api/time-logs",
+  return useMutation<TimeLog, Error, InsertTimeLog>({
+    mutationFn: async (timeLogData: InsertTimeLog): Promise<TimeLog> => {
+      const response = await fetch("/api/time-logs", {
         method: "POST",
-        body: timeLogData,
-        on401: "throw",
-      }),
-    onSuccess: (data) => {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(timeLogData),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to create time log: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    onSuccess: (data: TimeLog) => {
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId, "active"] });
     },
@@ -41,15 +56,20 @@ export function useCreateTimeLog() {
 export function useUpdateTimeLog(id: number) {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: (timeLogData: Partial<InsertTimeLog>) =>
-      apiRequest<TimeLog>({
-        url: `/api/time-logs/${id}`,
+  return useMutation<TimeLog, Error, Partial<InsertTimeLog>>({
+    mutationFn: async (timeLogData: Partial<InsertTimeLog>): Promise<TimeLog> => {
+      const response = await fetch(`/api/time-logs/${id}`, {
         method: "PATCH",
-        body: timeLogData,
-        on401: "throw",
-      }),
-    onSuccess: (data) => {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(timeLogData),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to update time log: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    onSuccess: (data: TimeLog) => {
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId, "active"] });
     },
@@ -59,15 +79,20 @@ export function useUpdateTimeLog(id: number) {
 export function useStopTimeLog() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: ({ id, endTime }: { id: number; endTime?: Date }) =>
-      apiRequest<TimeLog>({
-        url: `/api/time-logs/${id}/stop`,
+  return useMutation<TimeLog, Error, { id: number; endTime?: Date }>({
+    mutationFn: async ({ id, endTime }: { id: number; endTime?: Date }): Promise<TimeLog> => {
+      const response = await fetch(`/api/time-logs/${id}/stop`, {
         method: "PATCH",
-        body: { endTime },
-        on401: "throw",
-      }),
-    onSuccess: (data) => {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endTime }),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to stop time log: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    onSuccess: (data: TimeLog) => {
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId] });
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs", data.ticketId, "active"] });
     },
@@ -77,13 +102,16 @@ export function useStopTimeLog() {
 export function useDeleteTimeLog() {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: (id: number) =>
-      apiRequest({
-        url: `/api/time-logs/${id}`,
+  return useMutation<void, Error, number>({
+    mutationFn: async (id: number): Promise<void> => {
+      const response = await fetch(`/api/time-logs/${id}`, {
         method: "DELETE",
-        on401: "throw",
-      }),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to delete time log: ${response.statusText}`);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/time-logs"] });
     },

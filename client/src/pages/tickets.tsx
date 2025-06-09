@@ -10,6 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TicketForm from "@/components/ticket/ticket-form";
 import RepairNotesList from "@/components/repair/repair-notes-list";
+import TicketTimer from "@/components/timer/ticket-timer";
+import TimeLogsList from "@/components/timer/time-logs-list";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin, Edit, Trash2 } from "lucide-react";
