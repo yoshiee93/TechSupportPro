@@ -482,6 +482,67 @@ export class DatabaseStorage implements IStorage {
     await db.delete(reminders).where(eq(reminders.id, id));
   }
 
+  // Time Logs
+  async getTimeLogs(ticketId: number): Promise<TimeLog[]> {
+    return await db.select().from(timeLogs)
+      .where(eq(timeLogs.ticketId, ticketId))
+      .orderBy(desc(timeLogs.createdAt));
+  }
+
+  async getActiveTimeLog(ticketId: number, technicianName: string): Promise<TimeLog | undefined> {
+    const [timeLog] = await db.select().from(timeLogs)
+      .where(and(
+        eq(timeLogs.ticketId, ticketId),
+        eq(timeLogs.technicianName, technicianName),
+        sql`${timeLogs.endTime} IS NULL`
+      ));
+    return timeLog || undefined;
+  }
+
+  async createTimeLog(insertTimeLog: InsertTimeLog): Promise<TimeLog> {
+    const [timeLog] = await db.insert(timeLogs).values({
+      ...insertTimeLog,
+      updatedAt: new Date(),
+    }).returning();
+    return timeLog;
+  }
+
+  async updateTimeLog(id: number, timeLog: Partial<InsertTimeLog>): Promise<TimeLog> {
+    const [updated] = await db
+      .update(timeLogs)
+      .set({ ...timeLog, updatedAt: new Date() })
+      .where(eq(timeLogs.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTimeLog(id: number): Promise<void> {
+    await db.delete(timeLogs).where(eq(timeLogs.id, id));
+  }
+
+  async stopTimeLog(id: number, endTime?: Date): Promise<TimeLog> {
+    const stopTime = endTime || new Date();
+    
+    // Get the current time log to calculate duration
+    const [currentLog] = await db.select().from(timeLogs).where(eq(timeLogs.id, id));
+    if (!currentLog) {
+      throw new Error("Time log not found");
+    }
+    
+    const duration = Math.floor((stopTime.getTime() - new Date(currentLog.startTime).getTime()) / 1000);
+    
+    const [updated] = await db
+      .update(timeLogs)
+      .set({ 
+        endTime: stopTime,
+        duration: duration,
+        updatedAt: new Date()
+      })
+      .where(eq(timeLogs.id, id))
+      .returning();
+    return updated;
+  }
+
   // Dashboard Stats
   async getDashboardStats() {
     const today = new Date();

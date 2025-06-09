@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertRepairNoteSchema, insertReminderSchema } from "@shared/schema";
+import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertRepairNoteSchema, insertReminderSchema, insertTimeLogSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -395,6 +395,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete reminder" });
+    }
+  });
+
+  // Time logs
+  app.get("/api/time-logs/:ticketId", async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const timeLogs = await storage.getTimeLogs(ticketId);
+      res.json(timeLogs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch time logs" });
+    }
+  });
+
+  app.get("/api/time-logs/:ticketId/active", async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const technicianName = req.query.technician as string || "Unknown";
+      const activeLog = await storage.getActiveTimeLog(ticketId, technicianName);
+      res.json(activeLog || null);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active time log" });
+    }
+  });
+
+  app.post("/api/time-logs", async (req, res) => {
+    try {
+      const timeLogData = insertTimeLogSchema.parse(req.body);
+      const timeLog = await storage.createTimeLog(timeLogData);
+      res.status(201).json(timeLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create time log" });
+    }
+  });
+
+  app.patch("/api/time-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const timeLogData = insertTimeLogSchema.partial().parse(req.body);
+      const timeLog = await storage.updateTimeLog(id, timeLogData);
+      res.json(timeLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update time log" });
+    }
+  });
+
+  app.patch("/api/time-logs/:id/stop", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const endTime = req.body.endTime ? new Date(req.body.endTime) : undefined;
+      const timeLog = await storage.stopTimeLog(id, endTime);
+      res.json(timeLog);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to stop time log" });
+    }
+  });
+
+  app.delete("/api/time-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTimeLog(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete time log" });
     }
   });
 
