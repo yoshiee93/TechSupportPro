@@ -422,8 +422,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/time-logs", async (req, res) => {
     try {
-      const timeLogData = insertTimeLogSchema.parse(req.body);
-      const timeLog = await storage.createTimeLog(timeLogData);
+      const timeLogData = {
+        ...req.body,
+        startTime: req.body.startTime ? new Date(req.body.startTime) : new Date(),
+        endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
+      };
+      const validatedData = insertTimeLogSchema.parse(timeLogData);
+      const timeLog = await storage.createTimeLog(validatedData);
       res.status(201).json(timeLog);
     } catch (error) {
       if (error instanceof z.ZodError) {
