@@ -26,13 +26,11 @@ export default function Clients() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const { toast } = useToast();
   const deleteMutation = useDeleteClient();
-  const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useClients();
-  const { data: devices } = useDevices();
 
   const getDeviceIcon = (type: string) => {
     switch (type) {
@@ -339,7 +337,14 @@ export default function Clients() {
                               <p className="text-xs text-gray-500 font-mono">{device.serialNumber}</p>
                             )}
                           </div>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDevice(device);
+                            }}
+                          >
                             View Details
                           </Button>
                         </div>
@@ -348,6 +353,58 @@ export default function Clients() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Device Detail Modal */}
+      {selectedDevice && (
+        <Dialog open={!!selectedDevice} onOpenChange={() => setSelectedDevice(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                {getDeviceIcon(selectedDevice.type)}
+                <span>{selectedDevice.brand} {selectedDevice.model}</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Device Type</label>
+                  <p className="text-sm capitalize">{selectedDevice.type}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Brand</label>
+                  <p className="text-sm">{selectedDevice.brand}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Model</label>
+                  <p className="text-sm">{selectedDevice.model}</p>
+                </div>
+                {selectedDevice.serialNumber && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Serial Number</label>
+                    <p className="text-sm font-mono">{selectedDevice.serialNumber}</p>
+                  </div>
+                )}
+              </div>
+              
+              {selectedDevice.notes && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Notes</label>
+                  <p className="text-sm text-gray-700">{selectedDevice.notes}</p>
+                </div>
+              )}
+              
+              <div>
+                <label className="text-sm font-medium text-gray-500">Added</label>
+                <p className="text-sm">{format(new Date(selectedDevice.createdAt), "MMMM d, yyyy 'at' h:mm a")}</p>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
