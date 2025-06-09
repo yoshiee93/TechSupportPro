@@ -347,6 +347,12 @@ export default function Tickets() {
                 </Card>
               </div>
 
+              {/* Timer and Time Tracking */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-6">
+                <TicketTimer ticketId={selectedTicket.id} />
+                <TimeLogsList ticketId={selectedTicket.id} />
+              </div>
+
               {/* Repair Notes */}
               <div className="border-t pt-6">
                 <RepairNotesList ticketId={selectedTicket.id} />
