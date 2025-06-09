@@ -16,7 +16,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Repair Tickets", href: "/tickets", icon: TicketIcon, badge: 3 },
   { name: "Clients", href: "/clients", icon: Users },
-  { name: "Devices", href: "/devices", icon: Laptop },
   { name: "Parts & Orders", href: "/parts", icon: Package, badge: 7 },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];

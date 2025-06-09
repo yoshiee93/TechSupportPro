@@ -1,24 +1,90 @@
+
 import { useState } from "react";
 import { useClients, useDeleteClient } from "@/hooks/use-clients";
+import { useDevices } from "@/hooks/use-devices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import ClientForm from "@/components/client/client-form";
 import { useToast } from "@/hooks/use-toast";
+import { insertDeviceSchema } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { Search, Plus, Users, Phone, Mail, MapPin, Laptop, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Users, Phone, Mail, MapPin, Laptop, Edit, Trash2, Monitor, Smartphone, Tablet, Hash } from "lucide-react";
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
   const { toast } = useToast();
   const deleteMutation = useDeleteClient();
+  const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useClients();
+  const { data: devices } = useDevices();
+
+  const getDeviceIcon = (type: string) => {
+    switch (type) {
+      case "laptop": return <Laptop className="w-4 h-4" />;
+      case "smartphone": return <Smartphone className="w-4 h-4" />;
+      case "desktop": return <Monitor className="w-4 h-4" />;
+      case "tablet": return <Tablet className="w-4 h-4" />;
+      default: return <Monitor className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "laptop": return "bg-blue-100 text-blue-800";
+      case "smartphone": return "bg-green-100 text-green-800";
+      case "desktop": return "bg-purple-100 text-purple-800";
+      case "tablet": return "bg-orange-100 text-orange-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const deviceForm = useForm({
+    resolver: zodResolver(insertDeviceSchema),
+    defaultValues: {
+      clientId: 0,
+      type: "",
+      brand: "",
+      model: "",
+      serialNumber: "",
+      notes: "",
+    },
+  });
+
+  const createDeviceMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("POST", "/api/devices", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Device added successfully" });
+      setIsAddDeviceOpen(false);
+      deviceForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error adding device",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleDeleteClient = async (clientId: number) => {
     try {
@@ -32,6 +98,14 @@ export default function Clients() {
         variant: "destructive",
       });
     }
+  };
+
+  const onSubmitDevice = (data: any) => {
+    const deviceData = {
+      ...data,
+      clientId: selectedClient.id
+    };
+    createDeviceMutation.mutate(deviceData);
   };
 
   const filteredClients = clients?.filter(client =>
@@ -157,7 +231,7 @@ export default function Clients() {
       {/* Client Detail Modal */}
       {selectedClient && (
         <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <DialogTitle>{selectedClient.name}</DialogTitle>
@@ -213,7 +287,7 @@ export default function Clients() {
               </div>
             </DialogHeader>
             
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Contact Information */}
               <Card>
                 <CardHeader>
@@ -249,26 +323,158 @@ export default function Clients() {
               {/* Devices */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Devices ({selectedClient.devices.length})</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Devices ({selectedClient.devices.length})</CardTitle>
+                    <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Device
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Add Device for {selectedClient.name}</DialogTitle>
+                        </DialogHeader>
+                        
+                        <Form {...deviceForm}>
+                          <form onSubmit={deviceForm.handleSubmit(onSubmitDevice)} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={deviceForm.control}
+                                name="type"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Device Type</FormLabel>
+                                    <Select onValueChange={field.onChange}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="laptop">Laptop</SelectItem>
+                                        <SelectItem value="desktop">Desktop</SelectItem>
+                                        <SelectItem value="smartphone">Smartphone</SelectItem>
+                                        <SelectItem value="tablet">Tablet</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={deviceForm.control}
+                                name="brand"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Brand</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="e.g., Apple, Dell, HP" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <FormField
+                              control={deviceForm.control}
+                              name="model"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Model</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="e.g., MacBook Pro 13, OptiPlex 7070" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={deviceForm.control}
+                              name="serialNumber"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Serial Number</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Device serial number" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={deviceForm.control}
+                              name="notes"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Notes</FormLabel>
+                                  <FormControl>
+                                    <Textarea placeholder="Additional device information..." {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="flex justify-end space-x-3">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => setIsAddDeviceOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button type="submit" disabled={createDeviceMutation.isPending}>
+                                {createDeviceMutation.isPending ? "Adding..." : "Add Device"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {selectedClient.devices.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">No devices registered</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
                       {selectedClient.devices.map((device: any) => (
-                        <div key={device.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium">{device.brand} {device.model}</p>
-                            <p className="text-sm text-gray-600 capitalize">{device.type}</p>
-                            {device.serialNumber && (
-                              <p className="text-xs text-gray-500 font-mono">{device.serialNumber}</p>
-                            )}
+                        <Card key={device.id} className="p-3 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3">
+                              {getDeviceIcon(device.type)}
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <p className="font-medium">{device.brand} {device.model}</p>
+                                  <Badge className={getTypeColor(device.type)} variant="secondary">
+                                    {device.type}
+                                  </Badge>
+                                </div>
+                                {device.serialNumber && (
+                                  <div className="flex items-center space-x-1 mt-1">
+                                    <Hash className="w-3 h-3 text-gray-400" />
+                                    <span className="text-xs text-gray-500 font-mono">{device.serialNumber}</span>
+                                  </div>
+                                )}
+                                {device.notes && (
+                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{device.notes}</p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Added {format(new Date(device.createdAt), "MMM d, yyyy")}
+                                </p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
-                        </div>
+                        </Card>
                       ))}
                     </div>
                   )}
