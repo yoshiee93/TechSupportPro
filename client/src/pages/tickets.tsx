@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { useTickets } from "@/hooks/use-tickets";
+import { useTickets, useDeleteTicket } from "@/hooks/use-tickets";
 import { useClients } from "@/hooks/use-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TicketForm from "@/components/ticket/ticket-form";
 import RepairNotesList from "@/components/repair/repair-notes-list";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin, Edit, Trash2 } from "lucide-react";
 
 export default function Tickets() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,9 +20,26 @@ export default function Tickets() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { toast } = useToast();
+  const deleteMutation = useDeleteTicket();
 
   const { data: tickets, isLoading } = useTickets(searchQuery);
   const { data: clients } = useClients();
+
+  const handleDeleteTicket = async (ticketId: number) => {
+    try {
+      await deleteMutation.mutateAsync(ticketId);
+      toast({ title: "Ticket deleted successfully" });
+      setSelectedTicket(null);
+    } catch (error: any) {
+      toast({
+        title: "Error deleting ticket",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -211,9 +230,55 @@ export default function Tickets() {
                     {selectedTicket.priority}
                   </Badge>
                 </DialogTitle>
-                <Button variant="outline" size="sm">
-                  Edit Ticket
-                </Button>
+                <div className="flex space-x-2">
+                  <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Ticket
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edit Ticket</DialogTitle>
+                      </DialogHeader>
+                      <TicketForm 
+                        ticketId={selectedTicket.id}
+                        initialData={selectedTicket}
+                        onSuccess={() => {
+                          setIsEditOpen(false);
+                          setSelectedTicket(null);
+                        }} 
+                      />
+                    </DialogContent>
+                  </Dialog>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Ticket</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete ticket {selectedTicket.ticketNumber}? This action cannot be undone and will also delete all associated repair notes and activity logs.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteTicket(selectedTicket.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Ticket
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </DialogHeader>
             

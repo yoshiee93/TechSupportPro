@@ -1,19 +1,38 @@
 import { useState } from "react";
-import { useClients } from "@/hooks/use-clients";
+import { useClients, useDeleteClient } from "@/hooks/use-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import ClientForm from "@/components/client/client-form";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Search, Plus, Users, Phone, Mail, MapPin, Laptop } from "lucide-react";
+import { Search, Plus, Users, Phone, Mail, MapPin, Laptop, Edit, Trash2 } from "lucide-react";
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { toast } = useToast();
+  const deleteMutation = useDeleteClient();
 
   const { data: clients, isLoading } = useClients();
+
+  const handleDeleteClient = async (clientId: number) => {
+    try {
+      await deleteMutation.mutateAsync(clientId);
+      toast({ title: "Client deleted successfully" });
+      setSelectedClient(null);
+    } catch (error: any) {
+      toast({
+        title: "Error deleting client",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredClients = clients?.filter(client =>
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,9 +161,55 @@ export default function Clients() {
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <DialogTitle>{selectedClient.name}</DialogTitle>
-                <Button variant="outline" size="sm">
-                  Edit Client
-                </Button>
+                <div className="flex space-x-2">
+                  <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Client
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Edit Client</DialogTitle>
+                      </DialogHeader>
+                      <ClientForm 
+                        clientId={selectedClient.id}
+                        initialData={selectedClient}
+                        onSuccess={() => {
+                          setIsEditOpen(false);
+                          setSelectedClient(null);
+                        }} 
+                      />
+                    </DialogContent>
+                  </Dialog>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {selectedClient.name}? This action cannot be undone and will also delete all associated devices and tickets.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteClient(selectedClient.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Client
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </DialogHeader>
             
