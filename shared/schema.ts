@@ -222,10 +222,15 @@ export const insertReminderSchema = createInsertSchema(reminders).omit({
   completedAt: true,
 });
 
-export const insertTimeLogSchema = createInsertSchema(timeLogs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertTimeLogSchema = z.object({
+  ticketId: z.number(),
+  technicianName: z.string(),
+  startTime: z.date(),
+  endTime: z.date().optional(),
+  duration: z.number().optional(),
+  description: z.string().optional(),
+  billable: z.boolean().default(true),
+  hourlyRate: z.string().optional(),
 });
 
 // Types
