@@ -1,8 +1,8 @@
 import { 
-  clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders,
-  type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder,
+  clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs,
+  type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
-  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type TicketWithRelations, type ClientWithDevices
+  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
@@ -57,6 +57,14 @@ export interface IStorage {
   createReminder(reminder: InsertReminder): Promise<Reminder>;
   updateReminder(id: number, reminder: Partial<InsertReminder>): Promise<Reminder>;
   deleteReminder(id: number): Promise<void>;
+
+  // Time Logs
+  getTimeLogs(ticketId: number): Promise<TimeLog[]>;
+  getActiveTimeLog(ticketId: number, technicianName: string): Promise<TimeLog | undefined>;
+  createTimeLog(timeLog: InsertTimeLog): Promise<TimeLog>;
+  updateTimeLog(id: number, timeLog: Partial<InsertTimeLog>): Promise<TimeLog>;
+  deleteTimeLog(id: number): Promise<void>;
+  stopTimeLog(id: number, endTime?: Date): Promise<TimeLog>;
 
   // Dashboard Stats
   getDashboardStats(): Promise<{
@@ -177,6 +185,9 @@ export class DatabaseStorage implements IStorage {
         repairNotes: {
           orderBy: [desc(repairNotes.createdAt)],
         },
+        timeLogs: {
+          orderBy: [desc(timeLogs.createdAt)],
+        },
       },
       orderBy: [desc(tickets.createdAt)],
     });
@@ -195,6 +206,9 @@ export class DatabaseStorage implements IStorage {
         repairNotes: {
           orderBy: [desc(repairNotes.createdAt)],
         },
+        timeLogs: {
+          orderBy: [desc(timeLogs.createdAt)],
+        },
       },
     });
     return ticket || undefined;
@@ -212,6 +226,9 @@ export class DatabaseStorage implements IStorage {
         },
         repairNotes: {
           orderBy: [desc(repairNotes.createdAt)],
+        },
+        timeLogs: {
+          orderBy: [desc(timeLogs.createdAt)],
         },
       },
     });
@@ -291,6 +308,9 @@ export class DatabaseStorage implements IStorage {
         },
         repairNotes: {
           orderBy: [desc(repairNotes.createdAt)],
+        },
+        timeLogs: {
+          orderBy: [desc(timeLogs.createdAt)],
         },
       },
       orderBy: [desc(tickets.createdAt)],
