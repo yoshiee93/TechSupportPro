@@ -22,14 +22,17 @@ import {
   ShoppingCart,
   BarChart3,
   Edit,
-  Trash2
+  Trash2,
+  Scan
 } from "lucide-react";
+import BarcodeScanner from "@/components/inventory/barcode-scanner";
 
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [partDialogOpen, setPartDialogOpen] = useState(false);
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
   const [poDialogOpen, setPODialogOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Fetch real data from API
   const { data: parts = [] } = useQuery({
@@ -73,6 +76,11 @@ export default function Inventory() {
       case "adjustment": return "bg-yellow-100 text-yellow-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleBarcodeScan = (scannedValue: string) => {
+    setSearchQuery(scannedValue);
+    // Could also lookup part directly here
   };
 
   return (

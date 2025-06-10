@@ -107,6 +107,15 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
     createPartMutation.mutate(data);
   };
 
+  const handleBarcodeScan = (scannedValue: string) => {
+    // Auto-populate SKU field with scanned barcode
+    form.setValue("sku", scannedValue);
+    toast({
+      title: "Barcode Scanned",
+      description: `SKU set to: ${scannedValue}`,
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -118,7 +127,18 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
               <FormItem>
                 <FormLabel>SKU *</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., LCD-IP13-BLK" {...field} />
+                  <div className="flex gap-2">
+                    <Input placeholder="e.g., LCD-IP13-BLK" {...field} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setScannerOpen(true)}
+                      title="Scan barcode"
+                    >
+                      <Scan className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -391,6 +411,13 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
           </Button>
         </div>
       </form>
+
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleBarcodeScan}
+        title="Scan Part SKU"
+      />
     </Form>
   );
 }
