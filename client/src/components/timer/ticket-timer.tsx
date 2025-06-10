@@ -9,6 +9,7 @@ import { useActiveTimeLog, useCreateTimeLog, useStopTimeLog, useTimeLogs } from 
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import ManualTimeEntry from "./manual-time-entry";
 
 interface TicketTimerProps {
   ticketId: number;
@@ -191,6 +192,14 @@ export default function TicketTimer({ ticketId }: TicketTimerProps) {
               Stop Timer
             </Button>
           )}
+        </div>
+
+        {/* Manual Time Entry */}
+        <div className="border-t pt-4">
+          <ManualTimeEntry 
+            ticketId={ticketId} 
+            technicianName={technicianName || (user as any)?.firstName || "Unknown"} 
+          />
         </div>
 
         {/* Active Session Info */}
