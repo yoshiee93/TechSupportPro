@@ -1,0 +1,31 @@
+client:536 WebSocket connection to 'wss://5edc8f47-a7ce-4f51-a4f7-210b2c3554d7-00-4eknq6xno0wb.spock.replit.dev/?token=EH5jr8HkdM6f' failed: 
+setupWebSocket @ client:536
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=EH5jr8HkdM6f' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+chunk-RPCDYKBN.js?v=5b768646:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api/auth/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=5b768646:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=5b768646:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=5b768646:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=5b768646:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=5b768646:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=5b768646:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=5b768646:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=5b768646:19416
+commitRoot @ chunk-RPCDYKBN.js?v=5b768646:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=5b768646:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=5b768646:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=5b768646:18627
+repair-notes-form.tsx:222 Submit button clicked
+repair-notes-form.tsx:83 Form submit event triggered
+repair-notes-form.tsx:84 Form errors: {}
+repair-notes-form.tsx:85 Form values: {ticketId: 7, type: 'diagnostic', title: 'test', content: 'TEst', technicianName: 'Master Admin', …}
