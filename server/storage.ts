@@ -845,6 +845,255 @@ export class DatabaseStorage implements IStorage {
       revenueToday: Number(revenueTodayResult.revenue) || 0,
     };
   }
+
+  // Phase 3: Inventory Management Implementation
+  // Suppliers
+  async getSuppliers(): Promise<Supplier[]> {
+    return await db.select().from(suppliers).where(eq(suppliers.isActive, true));
+  }
+
+  async getSupplier(id: number): Promise<Supplier | undefined> {
+    const result = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return result[0];
+  }
+
+  async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
+    const result = await db.insert(suppliers).values(insertSupplier).returning();
+    return result[0];
+  }
+
+  async updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier> {
+    const result = await db.update(suppliers)
+      .set({ ...supplier, updatedAt: new Date() })
+      .where(eq(suppliers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSupplier(id: number): Promise<void> {
+    await db.update(suppliers)
+      .set({ isActive: false })
+      .where(eq(suppliers.id, id));
+  }
+
+  // Categories
+  async getCategories(): Promise<CategoryWithParent[]> {
+    return await db.select().from(categories).where(eq(categories.isActive, true));
+  }
+
+  async getCategory(id: number): Promise<CategoryWithParent | undefined> {
+    const result = await db.select().from(categories).where(eq(categories.id, id));
+    return result[0];
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const result = await db.insert(categories).values(insertCategory).returning();
+    return result[0];
+  }
+
+  async updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category> {
+    const result = await db.update(categories)
+      .set(category)
+      .where(eq(categories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCategory(id: number): Promise<void> {
+    await db.update(categories)
+      .set({ isActive: false })
+      .where(eq(categories.id, id));
+  }
+
+  // Parts
+  async getParts(): Promise<PartWithRelations[]> {
+    return await db.select().from(parts).where(eq(parts.isActive, true));
+  }
+
+  async getPart(id: number): Promise<PartWithRelations | undefined> {
+    const result = await db.select().from(parts).where(eq(parts.id, id));
+    return result[0];
+  }
+
+  async getPartBySku(sku: string): Promise<PartWithRelations | undefined> {
+    const result = await db.select().from(parts).where(eq(parts.sku, sku));
+    return result[0];
+  }
+
+  async createPart(insertPart: InsertPart): Promise<Part> {
+    const result = await db.insert(parts).values(insertPart).returning();
+    return result[0];
+  }
+
+  async updatePart(id: number, part: Partial<InsertPart>): Promise<Part> {
+    const result = await db.update(parts)
+      .set({ ...part, updatedAt: new Date() })
+      .where(eq(parts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePart(id: number): Promise<void> {
+    await db.update(parts)
+      .set({ isActive: false })
+      .where(eq(parts.id, id));
+  }
+
+  async searchParts(query: string): Promise<PartWithRelations[]> {
+    return await db.select()
+      .from(parts)
+      .where(and(
+        eq(parts.isActive, true),
+        or(
+          like(parts.sku, `%${query}%`),
+          like(parts.name, `%${query}%`),
+          like(parts.description, `%${query}%`)
+        )
+      ));
+  }
+
+  async getLowStockParts(): Promise<PartWithRelations[]> {
+    return await db.select()
+      .from(parts)
+      .where(and(
+        eq(parts.isActive, true),
+        sql`${parts.quantityOnHand} <= ${parts.reorderPoint}`
+      ));
+  }
+
+  // Purchase Orders
+  async getPurchaseOrders(): Promise<PurchaseOrderWithRelations[]> {
+    const result = await db.select().from(purchaseOrders).orderBy(desc(purchaseOrders.createdAt));
+    return result as PurchaseOrderWithRelations[];
+  }
+
+  async getPurchaseOrder(id: number): Promise<PurchaseOrderWithRelations | undefined> {
+    const result = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+    return result[0] as PurchaseOrderWithRelations | undefined;
+  }
+
+  async createPurchaseOrder(insertPurchaseOrder: InsertPurchaseOrder): Promise<PurchaseOrder> {
+    const poNumber = await this.generatePONumber();
+    const result = await db.insert(purchaseOrders)
+      .values({ ...insertPurchaseOrder, poNumber })
+      .returning();
+    return result[0];
+  }
+
+  async updatePurchaseOrder(id: number, po: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder> {
+    const result = await db.update(purchaseOrders)
+      .set({ ...po, updatedAt: new Date() })
+      .where(eq(purchaseOrders.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePurchaseOrder(id: number): Promise<void> {
+    await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+  }
+
+  private async generatePONumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const result = await db.select({ count: count() })
+      .from(purchaseOrders)
+      .where(like(purchaseOrders.poNumber, `PO-${year}-%`));
+    
+    const nextNumber = (result[0]?.count || 0) + 1;
+    return `PO-${year}-${nextNumber.toString().padStart(3, '0')}`;
+  }
+
+  // Purchase Order Items
+  async createPurchaseOrderItem(insertItem: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> {
+    const result = await db.insert(purchaseOrderItems).values(insertItem).returning();
+    return result[0];
+  }
+
+  async updatePurchaseOrderItem(id: number, item: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem> {
+    const result = await db.update(purchaseOrderItems)
+      .set(item)
+      .where(eq(purchaseOrderItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePurchaseOrderItem(id: number): Promise<void> {
+    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.id, id));
+  }
+
+  // Stock Movements
+  async getStockMovements(partId?: number): Promise<StockMovement[]> {
+    const query = db.select().from(stockMovements).orderBy(desc(stockMovements.createdAt));
+    
+    if (partId) {
+      return await query.where(eq(stockMovements.partId, partId));
+    }
+    
+    return await query;
+  }
+
+  async createStockMovement(insertMovement: InsertStockMovement): Promise<StockMovement> {
+    const result = await db.insert(stockMovements).values(insertMovement).returning();
+    
+    // Update part quantity
+    const movement = result[0];
+    const currentPart = await this.getPart(movement.partId);
+    if (currentPart) {
+      let newQuantity = currentPart.quantityOnHand || 0;
+      
+      if (movement.movementType === "in") {
+        newQuantity += movement.quantity;
+      } else if (movement.movementType === "out") {
+        newQuantity -= movement.quantity;
+      } else if (movement.movementType === "adjustment") {
+        newQuantity = movement.quantity; // Adjustment sets absolute quantity
+      }
+      
+      await this.updatePart(movement.partId, { quantityOnHand: Math.max(0, newQuantity) });
+      
+      // Check for low stock alerts
+      const reorderPoint = currentPart.reorderPoint || 0;
+      if (newQuantity <= reorderPoint) {
+        await this.createLowStockAlert({
+          partId: movement.partId,
+          currentQuantity: newQuantity,
+          reorderPoint: reorderPoint
+        });
+      }
+    }
+    
+    return movement;
+  }
+
+  // Low Stock Alerts
+  async getLowStockAlerts(): Promise<LowStockAlert[]> {
+    return await db.select()
+      .from(lowStockAlerts)
+      .where(eq(lowStockAlerts.isResolved, false))
+      .orderBy(desc(lowStockAlerts.createdAt));
+  }
+
+  async createLowStockAlert(insertAlert: InsertLowStockAlert): Promise<LowStockAlert> {
+    // Check if alert already exists for this part
+    const existing = await db.select()
+      .from(lowStockAlerts)
+      .where(and(
+        eq(lowStockAlerts.partId, insertAlert.partId),
+        eq(lowStockAlerts.isResolved, false)
+      ));
+    
+    if (existing.length > 0) {
+      return existing[0]; // Return existing alert
+    }
+    
+    const result = await db.insert(lowStockAlerts).values(insertAlert).returning();
+    return result[0];
+  }
+
+  async resolveLowStockAlert(id: number): Promise<void> {
+    await db.update(lowStockAlerts)
+      .set({ isResolved: true, resolvedAt: new Date() })
+      .where(eq(lowStockAlerts.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();

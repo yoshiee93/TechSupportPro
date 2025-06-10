@@ -14,6 +14,7 @@ import {
   Settings,
   Wrench,
   Shield,
+  Warehouse,
   X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,11 @@ export default function MobileNavigation({ onClose }: MobileNavigationProps) {
       href: "/parts", 
       icon: Package, 
       badge: stats?.pendingParts || 0 
+    },
+    { 
+      name: "Inventory", 
+      href: "/inventory", 
+      icon: Warehouse 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },

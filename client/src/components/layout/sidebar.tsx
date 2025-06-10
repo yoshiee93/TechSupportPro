@@ -13,7 +13,8 @@ import {
   BarChart3, 
   Settings,
   Wrench,
-  Shield
+  Shield,
+  Warehouse
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -41,6 +42,11 @@ export default function Sidebar() {
       href: "/parts", 
       icon: Package, 
       badge: stats?.pendingParts || 0 
+    },
+    { 
+      name: "Inventory", 
+      href: "/inventory", 
+      icon: Warehouse 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },

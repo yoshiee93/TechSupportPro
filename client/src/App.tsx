@@ -30,6 +30,7 @@ function AuthenticatedApp() {
             <Route path="/clients" component={Clients} />
             <Route path="/devices" component={Devices} />
             <Route path="/parts" component={Parts} />
+            <Route path="/inventory" component={Inventory} />
             <Route path="/admin" component={Admin} />
             <Route component={NotFound} />
           </Switch>
