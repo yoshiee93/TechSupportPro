@@ -194,14 +194,23 @@ export function registerTicketingRoutes(app: Express) {
 
   app.post("/api/time-logs", requireAuth, async (req, res) => {
     try {
+      console.log("Creating time log with data:", JSON.stringify(req.body, null, 2));
+      console.log("User from request:", req.user);
+      
       const timeLogData = insertTimeLogSchema.parse(req.body);
+      console.log("Validated time log data:", JSON.stringify(timeLogData, null, 2));
+      
       const timeLog = await storage.createTimeLog(timeLogData);
+      console.log("Created time log:", JSON.stringify(timeLog, null, 2));
+      
       res.status(201).json(timeLog);
     } catch (error) {
+      console.error("Time log creation error:", error);
       if (error instanceof z.ZodError) {
+        console.log("Zod validation errors:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create time log" });
+      res.status(500).json({ message: "Failed to create time log", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

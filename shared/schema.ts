@@ -254,8 +254,12 @@ export const insertTimeLogSchema = z.object({
   ticketId: z.number(),
   userId: z.string(),
   technicianName: z.string(),
-  startTime: z.date(),
-  endTime: z.date().optional(),
+  startTime: z.union([z.date(), z.string()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+  endTime: z.union([z.date(), z.string()]).optional().transform((val) => 
+    val && typeof val === 'string' ? new Date(val) : val
+  ),
   duration: z.number().optional(),
   description: z.string().optional(),
   billable: z.boolean().default(true),

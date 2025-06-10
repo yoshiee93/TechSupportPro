@@ -606,17 +606,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTimeLog(insertTimeLog: InsertTimeLog): Promise<TimeLog> {
-    const [timeLog] = await db.insert(timeLogs).values([{
-      ...insertTimeLog,
-      updatedAt: new Date(),
-    }]).returning();
-    return timeLog;
+    console.log("Storage: Creating time log with data:", JSON.stringify(insertTimeLog, null, 2));
+    
+    try {
+      // Ensure dates are properly converted
+      const timeLogData = {
+        ...insertTimeLog,
+        startTime: insertTimeLog.startTime instanceof Date ? insertTimeLog.startTime : new Date(insertTimeLog.startTime),
+        endTime: insertTimeLog.endTime ? 
+          (insertTimeLog.endTime instanceof Date ? insertTimeLog.endTime : new Date(insertTimeLog.endTime)) 
+          : null,
+        updatedAt: new Date(),
+      };
+      
+      const [timeLog] = await db.insert(timeLogs).values([timeLogData]).returning();
+      
+      console.log("Storage: Successfully created time log:", JSON.stringify(timeLog, null, 2));
+      return timeLog;
+    } catch (error) {
+      console.error("Storage: Time log creation failed:", error);
+      throw error;
+    }
   }
 
   async updateTimeLog(id: number, timeLog: Partial<InsertTimeLog>): Promise<TimeLog> {
+    // Ensure dates are properly converted
+    const updateData: any = { ...timeLog, updatedAt: new Date() };
+    
+    if (updateData.startTime && typeof updateData.startTime === 'string') {
+      updateData.startTime = new Date(updateData.startTime);
+    }
+    
+    if (updateData.endTime && typeof updateData.endTime === 'string') {
+      updateData.endTime = new Date(updateData.endTime);
+    }
+    
     const [updated] = await db
       .update(timeLogs)
-      .set({ ...timeLog, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(timeLogs.id, id))
       .returning();
     return updated;
