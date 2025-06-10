@@ -52,14 +52,19 @@ export function registerTicketingRoutes(app: Express) {
   // Create new ticket
   app.post("/api/tickets", requireAuth, async (req, res) => {
     try {
+      console.log("Creating ticket with data:", req.body);
       const ticketData = insertTicketSchema.parse(req.body);
+      console.log("Validated ticket data:", ticketData);
       const ticket = await storage.createTicket(ticketData);
       res.status(201).json(ticket);
     } catch (error) {
+      console.error("Ticket creation error:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid ticket data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create ticket" });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to create ticket", error: errorMessage });
     }
   });
 
@@ -82,10 +87,13 @@ export function registerTicketingRoutes(app: Express) {
   app.delete("/api/tickets/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log("Deleting ticket with id:", id);
       await storage.deleteTicket(id);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete ticket" });
+      console.error("Ticket deletion error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to delete ticket", error: errorMessage });
     }
   });
 
