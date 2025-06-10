@@ -12,6 +12,8 @@ import TicketForm from "@/components/ticket/ticket-form";
 import RepairNotesList from "@/components/repair/repair-notes-list";
 import TicketTimer from "@/components/timer/ticket-timer";
 import TimeLogsList from "@/components/timer/time-logs-list";
+import { PhotoUpload } from "@/components/attachment/photo-upload";
+import { PhotoGallery } from "@/components/attachment/photo-gallery";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin, Edit, Trash2 } from "lucide-react";
@@ -351,6 +353,25 @@ export default function Tickets() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-6">
                 <TicketTimer ticketId={selectedTicket.id} />
                 <TimeLogsList ticketId={selectedTicket.id} />
+              </div>
+
+              {/* Photos & Attachments - Phase 2 Features */}
+              <div className="border-t pt-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-blue-900">New Phase 2 Features</span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Photo Upload & Gallery</span>
+                  </div>
+                </div>
+                <PhotoGallery ticketId={selectedTicket.id} />
+                <PhotoUpload 
+                  ticketId={selectedTicket.id} 
+                  onUploadComplete={() => {
+                    // Refresh ticket data to show new attachment
+                    window.location.reload();
+                  }} 
+                />
               </div>
 
               {/* Repair Notes */}
