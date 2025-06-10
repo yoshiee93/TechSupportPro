@@ -247,12 +247,35 @@ export function registerTicketingRoutes(app: Express) {
 
   app.post("/api/time-logs/:id/stop", requireAuth, async (req, res) => {
     try {
+      console.log("Stopping time log ID:", req.params.id);
+      console.log("Stop request body:", req.body);
+      
       const id = parseInt(req.params.id);
       const { endTime } = req.body;
       const timeLog = await storage.stopTimeLog(id, endTime ? new Date(endTime) : undefined);
+      
+      console.log("Stopped time log result:", JSON.stringify(timeLog, null, 2));
       res.json(timeLog);
     } catch (error) {
-      res.status(500).json({ message: "Failed to stop time log" });
+      console.error("Stop time log error:", error);
+      res.status(500).json({ message: "Failed to stop time log", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.patch("/api/time-logs/:id/stop", requireAuth, async (req, res) => {
+    try {
+      console.log("PATCH: Stopping time log ID:", req.params.id);
+      console.log("PATCH: Stop request body:", req.body);
+      
+      const id = parseInt(req.params.id);
+      const { endTime } = req.body;
+      const timeLog = await storage.stopTimeLog(id, endTime ? new Date(endTime) : undefined);
+      
+      console.log("PATCH: Stopped time log result:", JSON.stringify(timeLog, null, 2));
+      res.json(timeLog);
+    } catch (error) {
+      console.error("PATCH: Stop time log error:", error);
+      res.status(500).json({ message: "Failed to stop time log", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

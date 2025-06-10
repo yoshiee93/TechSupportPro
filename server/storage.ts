@@ -654,15 +654,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async stopTimeLog(id: number, endTime?: Date): Promise<TimeLog> {
+    console.log("Storage: Stopping time log", { id, endTime });
+    
     const stopTime = endTime || new Date();
     
     // Get the current time log to calculate duration
     const [currentLog] = await db.select().from(timeLogs).where(eq(timeLogs.id, id));
     if (!currentLog) {
+      console.error("Storage: Time log not found for ID:", id);
       throw new Error("Time log not found");
     }
     
+    console.log("Storage: Current log before stopping:", JSON.stringify(currentLog, null, 2));
+    
     const duration = Math.floor((stopTime.getTime() - new Date(currentLog.startTime).getTime()) / 1000);
+    console.log("Storage: Calculated duration:", duration, "seconds");
     
     const [updated] = await db
       .update(timeLogs)
@@ -673,6 +679,8 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(timeLogs.id, id))
       .returning();
+    
+    console.log("Storage: Updated time log:", JSON.stringify(updated, null, 2));
     return updated;
   }
 
