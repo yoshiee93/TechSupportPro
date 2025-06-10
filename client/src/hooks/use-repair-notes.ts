@@ -21,7 +21,7 @@ export function useCreateRepairNote() {
   
   return useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/repair-notes", data);
+      return await apiRequest("POST", `/api/tickets/${data.ticketId}/repair-notes`, data);
     },
     onSuccess: (newNote: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", newNote.ticketId, "repair-notes"] });
