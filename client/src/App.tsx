@@ -9,6 +9,7 @@ import Tickets from "@/pages/tickets";
 import Clients from "@/pages/clients";
 import Devices from "@/pages/devices";
 import Parts from "@/pages/parts";
+import Admin from "@/pages/admin";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/clients" component={Clients} />
       <Route path="/devices" component={Devices} />
       <Route path="/parts" component={Parts} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

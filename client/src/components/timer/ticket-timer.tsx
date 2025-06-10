@@ -66,7 +66,7 @@ export default function TicketTimer({ ticketId }: TicketTimerProps) {
     try {
       await createTimeLog.mutateAsync({
         ticketId,
-        userId: user?.id || "unknown",
+        userId: (user as any)?.id || "unknown",
         technicianName: technicianName.trim(),
         startTime: new Date(),
         billable: true,
@@ -137,15 +137,15 @@ export default function TicketTimer({ ticketId }: TicketTimerProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Technician Name Input */}
+        {/* Technician Name Display */}
         <div className="space-y-2">
-          <Label htmlFor="technician">Technician Name</Label>
+          <Label htmlFor="technician">Technician</Label>
           <Input
             id="technician"
             value={technicianName}
-            onChange={(e) => setTechnicianName(e.target.value)}
-            placeholder="Enter your name"
-            disabled={!!activeTimeLog}
+            placeholder="Logged in as..."
+            disabled={true}
+            className="bg-muted"
           />
         </div>
 

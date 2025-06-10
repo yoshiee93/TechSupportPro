@@ -9,7 +9,8 @@ import {
   Package, 
   BarChart3, 
   Settings,
-  Wrench
+  Wrench,
+  Shield
 } from "lucide-react";
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: "Repair Tickets", href: "/tickets", icon: TicketIcon, badge: 3 },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Parts & Orders", href: "/parts", icon: Package, badge: 7 },
+  { name: "Admin", href: "/admin", icon: Shield },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
