@@ -16,6 +16,7 @@ interface PhotoUploadProps {
 export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [type, setType] = useState('device_photo');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +46,9 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
       return;
     }
 
+    // Store the selected file
+    setSelectedFile(file);
+    
     // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -54,8 +58,7 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
   };
 
   const handleUpload = async () => {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) {
+    if (!selectedFile) {
       toast({
         title: "No file selected",
         description: "Please select a file to upload.",
@@ -64,17 +67,17 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
       return;
     }
 
-    console.log('Starting upload for file:', file.name, 'to ticket:', ticketId);
+    console.log('Starting upload for file:', selectedFile.name, 'to ticket:', ticketId);
     setUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', selectedFile);
       formData.append('ticketId', ticketId.toString());
       formData.append('description', description);
       formData.append('type', type);
 
-      console.log('Uploading with data:', { ticketId, description, type, fileName: file.name });
+      console.log('Uploading with data:', { ticketId, description, type, fileName: selectedFile.name });
 
       const response = await fetch('/api/attachments/upload', {
         method: 'POST',
@@ -105,6 +108,7 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
 
       // Reset form
       setPreview(null);
+      setSelectedFile(null);
       setDescription('');
       setType('device_photo');
       if (fileInputRef.current) {

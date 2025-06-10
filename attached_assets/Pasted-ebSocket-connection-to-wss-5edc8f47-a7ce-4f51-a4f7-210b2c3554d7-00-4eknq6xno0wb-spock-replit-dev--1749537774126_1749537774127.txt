@@ -1,0 +1,46 @@
+ebSocket connection to 'wss://5edc8f47-a7ce-4f51-a4f7-210b2c3554d7-00-4eknq6xno0wb.spock.replit.dev/?token=unkEfCDsz6H8' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=unkEfCDsz6H8' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this error
+chunk-RPCDYKBN.js?v=5b768646:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api/auth/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+3chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335Understand this warning
+repair-notes-form.tsx:223 Submit button clicked
+repair-notes-form.tsx:84 Form submit event triggered
+repair-notes-form.tsx:85 Form errors: Object
+repair-notes-form.tsx:86 Form values: Object
+repair-notes-form.tsx:55 Form submission started with data: Object
+repair-notes-form.tsx:63 Creating new note for ticket: 7
+use-repair-notes.ts:24 Creating repair note with data: Object
+use-repair-notes.ts:27 API response: Object
+use-repair-notes.ts:31 Mutation success, invalidating queries for ticket: 7
+repair-notes-form.tsx:65 Create result: Object
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335Understand this warning
+repair-notes-form.tsx:223 Submit button clicked
+repair-notes-form.tsx:84 Form submit event triggered
+repair-notes-form.tsx:85 Form errors: Object
+repair-notes-form.tsx:86 Form values: Object
+repair-notes-form.tsx:55 Form submission started with data: Object
+repair-notes-form.tsx:63 Creating new note for ticket: 7
+use-repair-notes.ts:24 Creating repair note with data: Object
+use-repair-notes.ts:27 API response: Object
+use-repair-notes.ts:31 Mutation success, invalidating queries for ticket: 7
+repair-notes-form.tsx:65 Create result: Object
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335Understand this warning
+repair-notes-form.tsx:223 Submit button clicked
+repair-notes-form.tsx:84 Form submit event triggered
+repair-notes-form.tsx:85 Form errors: Object
+repair-notes-form.tsx:86 Form values: Object
+repair-notes-form.tsx:55 Form submission started with data: Object
+repair-notes-form.tsx:58 Updating note with ID: 4
+repair-notes-form.tsx:60 Update result: Response
+2photo-upload.tsx:236 Upload button clicked
