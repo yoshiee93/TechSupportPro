@@ -273,10 +273,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const upsertUserSchema = z.object({
   id: z.string(),
+  username: z.string(),
+  password: z.string(),
   email: z.string().email().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  profileImageUrl: z.string().optional(),
   role: z.enum(["admin", "technician"]).default("technician"),
   isActive: z.boolean().default(true),
 });

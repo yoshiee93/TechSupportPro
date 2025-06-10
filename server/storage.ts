@@ -446,7 +446,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [activityLog] = await db.insert(activityLogs).values(log).returning();
+    const [activityLog] = await db.insert(activityLogs).values([log]).returning();
     return activityLog;
   }
 
@@ -460,14 +460,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRepairNote(insertRepairNote: InsertRepairNote): Promise<RepairNote> {
-    const [repairNote] = await db.insert(repairNotes).values(insertRepairNote).returning();
+    const [repairNote] = await db.insert(repairNotes).values([insertRepairNote]).returning();
     
     // Create activity log
     await this.createActivityLog({
       ticketId: repairNote.ticketId,
       type: "repair_note_added",
       description: `Repair note added: ${repairNote.title}`,
-      userId: "system",
+      userId: repairNote.userId,
+      createdBy: repairNote.userId,
     });
 
     return repairNote;
