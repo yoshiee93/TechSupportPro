@@ -9,7 +9,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   setupAuth(app);
   // Clients
-  app.get("/api/clients", async (req, res) => {
+  app.get("/api/clients", requireAuth, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients", async (req, res) => {
+  app.post("/api/clients", requireAuth, async (req, res) => {
     try {
       const clientData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(clientData);
