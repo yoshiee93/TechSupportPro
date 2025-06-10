@@ -13,10 +13,7 @@ export class JWTManager {
   private secret: string;
   private expiresIn: string;
 
-  constructor(secret?: string, expiresIn = '24h') {
-    if (!secret) {
-      throw new Error('JWT secret is required');
-    }
+  constructor(secret: string, expiresIn = '24h') {
     this.secret = secret;
     this.expiresIn = expiresIn;
   }

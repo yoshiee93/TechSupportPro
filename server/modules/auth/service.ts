@@ -7,7 +7,11 @@ export class AuthService {
 
   constructor(jwtSecret?: string) {
     if (jwtSecret) {
-      this.jwtManager = new JWTManager(jwtSecret);
+      try {
+        this.jwtManager = new JWTManager(jwtSecret);
+      } catch (error) {
+        console.warn('JWT initialization failed, JWT features disabled');
+      }
     }
   }
 

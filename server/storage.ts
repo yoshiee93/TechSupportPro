@@ -325,14 +325,14 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
-    // Create initial activity log
-    await this.createActivityLog({
-      ticketId: ticket.id,
-      type: "ticket_created",
-      description: "Ticket created",
-      userId: "system",
-      createdBy: "system",
-    });
+    // Create initial activity log - temporarily skip until we have proper user context
+    // await this.createActivityLog({
+    //   ticketId: ticket.id,
+    //   type: "ticket_created",
+    //   description: "Ticket created",
+    //   userId: "system",
+    //   createdBy: "system",
+    // });
 
     return ticket;
   }
@@ -365,6 +365,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTicket(id: number): Promise<void> {
     // Delete related records first due to foreign key constraints
+    await db.delete(timeLogs).where(eq(timeLogs.ticketId, id));
     await db.delete(repairNotes).where(eq(repairNotes.ticketId, id));
     await db.delete(partsOrders).where(eq(partsOrders.ticketId, id));
     await db.delete(activityLogs).where(eq(activityLogs.ticketId, id));
