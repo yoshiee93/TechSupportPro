@@ -33,7 +33,7 @@ export function PhotoGallery({ ticketId }: PhotoGalleryProps) {
   const { data: attachments, isLoading, refetch } = useQuery({
     queryKey: ['/api/attachments', ticketId],
     queryFn: async () => {
-      const response = await fetch(`/api/attachments/ticket/${ticketId}`, {
+      const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
         credentials: 'include',
       });
       if (!response.ok) {
