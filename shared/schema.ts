@@ -138,6 +138,19 @@ export const timeLogs = pgTable("time_logs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const attachments = pgTable("attachments", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimetype: text("mimetype").notNull(),
+  size: integer("size").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("device_photo"), // device_photo, repair_photo, document
+  uploadedBy: text("uploaded_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const clientsRelations = relations(clients, ({ many }) => ({
   devices: many(devices),
@@ -208,6 +221,13 @@ export const timeLogsRelations = relations(timeLogs, ({ one }) => ({
   }),
 }));
 
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [attachments.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
 // Insert schemas
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
@@ -266,6 +286,11 @@ export const insertTimeLogSchema = z.object({
   hourlyRate: z.string().optional(),
 });
 
+export const insertAttachmentSchema = createInsertSchema(attachments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // User schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -296,6 +321,7 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type InsertRepairNote = z.infer<typeof insertRepairNoteSchema>;
 export type InsertReminder = z.infer<typeof insertReminderSchema>;
 export type InsertTimeLog = z.infer<typeof insertTimeLogSchema>;
+export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
 
 export type Client = typeof clients.$inferSelect;
 export type Device = typeof devices.$inferSelect;
@@ -305,6 +331,7 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type RepairNote = typeof repairNotes.$inferSelect;
 export type Reminder = typeof reminders.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;
 
 // Extended types with relations
 export type TicketWithRelations = Ticket & {
