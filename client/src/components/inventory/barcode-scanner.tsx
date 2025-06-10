@@ -20,13 +20,17 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
-    if (isOpen && !codeReader.current) {
+    if (isOpen) {
+      // Always create a fresh instance when dialog opens
       codeReader.current = new BrowserMultiFormatReader();
+      console.log('BrowserMultiFormatReader initialized');
     }
 
     return () => {
       if (codeReader.current) {
+        console.log('Cleaning up barcode scanner');
         codeReader.current.reset();
+        codeReader.current = null;
       }
     };
   }, [isOpen]);
@@ -55,18 +59,32 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const startScanning = async () => {
     console.log('Start scanning button clicked');
     
-    if (!codeReader.current || !videoRef.current) {
-      console.log('Missing codeReader or videoRef:', { 
-        hasCodeReader: !!codeReader.current, 
-        hasVideoRef: !!videoRef.current 
-      });
-      setError("Scanner not initialized properly");
+    // Ensure scanner is initialized
+    if (!codeReader.current) {
+      console.log('Initializing codeReader...');
+      codeReader.current = new BrowserMultiFormatReader();
+    }
+    
+    // Set scanning state first to show video element
+    setIsScanning(true);
+    setError(null);
+    
+    // Wait for video element to be rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!videoRef.current) {
+      console.log('Video element not available after render');
+      setError("Video element not available");
+      setIsScanning(false);
       return;
     }
+    
+    console.log('Scanner components ready:', { 
+      hasCodeReader: !!codeReader.current, 
+      hasVideoRef: !!videoRef.current 
+    });
 
     try {
-      setIsScanning(true);
-      setError(null);
       console.log('Requesting camera permission...');
 
       const hasCamera = await requestCameraPermission();
