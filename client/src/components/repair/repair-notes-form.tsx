@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRepairNoteSchema } from "@shared/schema";
 import { useCreateRepairNote, useUpdateRepairNote } from "@/hooks/use-repair-notes";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,8 +20,21 @@ interface RepairNotesFormProps {
 
 export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialData }: RepairNotesFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const createMutation = useCreateRepairNote();
   const updateMutation = useUpdateRepairNote(noteId || 0);
+
+  // Get user's display name
+  const getUserDisplayName = () => {
+    if (!user) return "Unknown User";
+    const userInfo = user as any;
+    if (userInfo.firstName && userInfo.lastName) {
+      return `${userInfo.firstName} ${userInfo.lastName}`;
+    }
+    if (userInfo.firstName) return userInfo.firstName;
+    if (userInfo.email) return userInfo.email;
+    return "Unknown User";
+  };
 
   const form = useForm({
     resolver: zodResolver(insertRepairNoteSchema),
@@ -29,7 +43,7 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
       type: initialData?.type || "diagnostic",
       title: initialData?.title || "",
       content: initialData?.content || "",
-      technicianName: initialData?.technicianName || "John Doe", // Default technician
+      technicianName: initialData?.technicianName || getUserDisplayName(),
       isResolved: initialData?.isResolved || false,
       priority: initialData?.priority || "normal",
       tags: initialData?.tags || [],
@@ -150,7 +164,12 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
             <FormItem>
               <FormLabel>Technician Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter technician name" {...field} />
+                <Input 
+                  placeholder="Technician name"
+                  className="bg-muted"
+                  disabled
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

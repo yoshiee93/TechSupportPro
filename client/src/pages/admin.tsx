@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Users, Shield, UserX, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Users, Shield, UserX, Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 interface User {
   id: string;
+  username: string;
   email?: string;
   firstName?: string;
   lastName?: string;
@@ -21,10 +28,32 @@ interface User {
   updatedAt: string;
 }
 
+const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address").optional(),
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["admin", "technician"], { required_error: "Role is required" }),
+});
+
+const editUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address").optional(),
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  role: z.enum(["admin", "technician"], { required_error: "Role is required" }),
+});
+
+type CreateUserData = z.infer<typeof createUserSchema>;
+type EditUserData = z.infer<typeof editUserSchema>;
+
 export default function Admin() {
   const { user: currentUser, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -52,7 +81,51 @@ export default function Admin() {
     },
   });
 
-  const deactivateUserMutation = useMutation({
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: CreateUserData) => {
+      const res = await apiRequest("POST", "/api/admin/users", userData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "User Created",
+        description: "New user has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editUserMutation = useMutation({
+    mutationFn: async ({ userId, userData }: { userId: string; userData: EditUserData }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}`, userData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditingUser(null);
+      toast({
+        title: "User Updated",
+        description: "User has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
       return res.json();
@@ -60,13 +133,13 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "User Deactivated",
-        description: "User has been successfully deactivated.",
+        title: "User Deleted",
+        description: "User has been successfully deleted.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Deactivation Failed",
+        title: "Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
