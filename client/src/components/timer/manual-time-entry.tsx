@@ -83,9 +83,9 @@ export default function ManualTimeEntry({ ticketId, technicianName }: ManualTime
         startTime: startDateTime,
         endTime: endDateTime,
         duration,
-        description: data.description || "",
+        description: data.description?.trim() || undefined,
         billable: data.billable,
-        hourlyRate: data.hourlyRate || "",
+        hourlyRate: data.hourlyRate?.trim() || undefined,
       };
 
       console.log("Sending manual time log data:", timeLogData);

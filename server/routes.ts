@@ -429,6 +429,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         startTime: req.body.startTime ? new Date(req.body.startTime) : new Date(),
         endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
+        hourlyRate: req.body.hourlyRate && req.body.hourlyRate.trim() !== "" ? req.body.hourlyRate : undefined,
+        description: req.body.description && req.body.description.trim() !== "" ? req.body.description : undefined,
       };
       
       console.log("Received time log data:", timeLogData);
