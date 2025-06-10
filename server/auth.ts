@@ -193,16 +193,9 @@ export function setupAuth(app: Express) {
 }
 
 export function requireAuth(req: any, res: any, next: any) {
-  // Temporarily bypass authentication for testing
-  req.user = {
-    id: "test-user-123",
-    username: "testuser",
-    email: "test@example.com",
-    firstName: "Test",
-    lastName: "User",
-    role: "admin",
-    isActive: true,
-  };
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
   next();
 }
 
