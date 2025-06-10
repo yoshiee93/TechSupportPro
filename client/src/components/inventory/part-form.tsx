@@ -80,10 +80,7 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
   });
 
   const createPartMutation = useMutation({
-    mutationFn: (data: FormValues) => apiRequest("/api/inventory/parts", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: FormValues) => apiRequest("POST", "/api/inventory/parts", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/parts"] });
       toast({

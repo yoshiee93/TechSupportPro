@@ -102,7 +102,7 @@ export default function SupplierForm({ onSuccess, initialData }: SupplierFormPro
               <FormItem>
                 <FormLabel>Contact Person</FormLabel>
                 <FormControl>
-                  <Input placeholder="Primary contact name" {...field} />
+                  <Input placeholder="Primary contact name" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
