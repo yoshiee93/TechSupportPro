@@ -183,30 +183,30 @@ export default function Dashboard() {
                 </div>
               ) : (
                 recentTickets.map((ticket) => (
-                  <div key={ticket.id} className="p-6 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                  <div key={ticket.id} className="p-4 sm:p-6 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800 text-xs">
                           {ticket.ticketNumber}
                         </Badge>
-                        <Badge className={getStatusColor(ticket.status)}>
+                        <Badge className={`${getStatusColor(ticket.status)} text-xs`}>
                           {ticket.status.replace("_", " ")}
                         </Badge>
                         {ticket.priority === "urgent" && (
-                          <Badge className={getPriorityColor(ticket.priority)}>
+                          <Badge className={`${getPriorityColor(ticket.priority)} text-xs`}>
                             Urgent
                           </Badge>
                         )}
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-gray-500">
                         {format(new Date(ticket.createdAt), "MMM d, h:mm a")}
                       </span>
                     </div>
-                    <h4 className="font-medium text-gray-900 mb-1">{ticket.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{ticket.title}</h4>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">
                       {ticket.client.name} • {ticket.device.brand} {ticket.device.model}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">{ticket.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{ticket.description}</p>
                   </div>
                 ))
               )}
@@ -215,7 +215,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Column */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           
           {/* Urgent Reminders */}
           <Card>
