@@ -255,22 +255,22 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                 </div>
               </div>
               
-              <div className="flex space-x-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button 
                   onClick={triggerFocus} 
                   variant="outline" 
-                  className="flex-1"
+                  size="sm"
                   title="Tap to refocus camera"
                 >
-                  <Camera className="w-4 h-4 mr-2" />
+                  <Camera className="w-4 h-4 mr-1" />
                   Focus
                 </Button>
                 <Button 
                   onClick={stopScanning} 
                   variant="outline" 
-                  className="flex-1"
+                  size="sm"
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4 mr-1" />
                   Stop
                 </Button>
               </div>
