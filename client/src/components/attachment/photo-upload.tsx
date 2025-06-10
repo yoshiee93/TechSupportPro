@@ -55,8 +55,16 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
 
   const handleUpload = async () => {
     const file = fileInputRef.current?.files?.[0];
-    if (!file) return;
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    console.log('Starting upload for file:', file.name, 'to ticket:', ticketId);
     setUploading(true);
 
     try {
@@ -66,17 +74,29 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
       formData.append('description', description);
       formData.append('type', type);
 
+      console.log('Uploading with data:', { ticketId, description, type, fileName: file.name });
+
       const response = await fetch('/api/attachments/upload', {
         method: 'POST',
         body: formData,
         credentials: 'include',
       });
 
+      const responseText = await response.text();
+      console.log('Upload response:', response.status, responseText);
+
       if (!response.ok) {
-        throw new Error('Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
+      const result = JSON.parse(responseText);
       
       toast({
         title: "Photo uploaded successfully",
@@ -95,9 +115,10 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
 
     } catch (error) {
       console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Upload failed",
-        description: "Failed to upload the photo. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -210,7 +231,14 @@ export function PhotoUpload({ ticketId, onUploadComplete }: PhotoUploadProps) {
               </div>
 
               <div className="flex space-x-2">
-                <Button onClick={handleUpload} disabled={uploading} className="flex-1">
+                <Button 
+                  onClick={() => {
+                    console.log('Upload button clicked');
+                    handleUpload();
+                  }} 
+                  disabled={uploading} 
+                  className="flex-1"
+                >
                   {uploading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />

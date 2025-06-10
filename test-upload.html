@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Photo Upload</title>
+</head>
+<body>
+    <h1>Test Photo Upload</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept="image/*" required>
+        <input type="hidden" id="ticketId" value="7">
+        <input type="text" id="description" placeholder="Description" value="Test upload">
+        <select id="type">
+            <option value="device_photo">Device Photo</option>
+            <option value="repair_photo">Repair Progress</option>
+            <option value="document">Document</option>
+        </select>
+        <button type="submit">Upload</button>
+    </form>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('ticketId', document.getElementById('ticketId').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('type', document.getElementById('type').value);
+            
+            try {
+                const response = await fetch('/api/attachments/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                const result = await response.text();
+                console.log('Response:', response.status, result);
+                
+                if (response.ok) {
+                    alert('Upload successful!');
+                } else {
+                    alert('Upload failed: ' + result);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Upload error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
