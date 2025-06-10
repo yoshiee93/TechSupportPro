@@ -1,6 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useDashboardStats } from "@/hooks/use-tickets";
+import { useClients } from "@/hooks/use-clients";
+import { usePartsOrders } from "@/hooks/use-parts";
 import { 
   Home, 
   TicketIcon, 
@@ -13,17 +16,35 @@ import {
   Shield
 } from "lucide-react";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Repair Tickets", href: "/tickets", icon: TicketIcon, badge: 3 },
-  { name: "Clients", href: "/clients", icon: Users },
-  { name: "Parts & Orders", href: "/parts", icon: Package, badge: 7 },
-  { name: "Admin", href: "/admin", icon: Shield },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-];
-
 export default function Sidebar() {
   const [location] = useLocation();
+  const { data: stats } = useDashboardStats();
+  const { data: clients = [] } = useClients();
+  const { data: partsOrders = [] } = usePartsOrders();
+
+  const navigation = [
+    { name: "Dashboard", href: "/", icon: Home },
+    { 
+      name: "Repair Tickets", 
+      href: "/tickets", 
+      icon: TicketIcon, 
+      badge: stats?.activeTickets || 0 
+    },
+    { 
+      name: "Clients", 
+      href: "/clients", 
+      icon: Users, 
+      badge: clients.length || 0 
+    },
+    { 
+      name: "Parts & Orders", 
+      href: "/parts", 
+      icon: Package, 
+      badge: stats?.pendingParts || 0 
+    },
+    { name: "Admin", href: "/admin", icon: Shield },
+    { name: "Reports", href: "/reports", icon: BarChart3 },
+  ];
 
   return (
     <aside className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
@@ -57,14 +78,14 @@ export default function Sidebar() {
               >
                 <item.icon className="w-5 h-5 mr-3" />
                 {item.name}
-                {item.badge && (
+                {item.badge !== undefined && item.badge > 0 && (
                   <Badge 
                     variant="secondary" 
                     className={cn(
                       "ml-auto text-xs px-2 py-0.5",
                       item.name === "Repair Tickets" 
                         ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
+                        : "bg-blue-100 text-blue-800"
                     )}
                   >
                     {item.badge}
@@ -96,11 +117,11 @@ export default function Sidebar() {
       <div className="px-4 py-6 border-t border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">JD</span>
+            <span className="text-white text-sm font-medium">MA</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-            <p className="text-xs text-gray-500">Senior Technician</p>
+            <p className="text-sm font-medium text-gray-900 truncate">Master Admin</p>
+            <p className="text-xs text-gray-500">Administrator</p>
           </div>
         </div>
       </div>
