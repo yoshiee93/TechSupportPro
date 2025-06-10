@@ -76,17 +76,21 @@ export default function ManualTimeEntry({ ticketId, technicianName }: ManualTime
 
       const duration = calculateDuration(data.startTime, data.endTime);
 
-      await createTimeLog.mutateAsync({
+      const timeLogData = {
         ticketId,
         userId: (user as any)?.id || "",
         technicianName,
         startTime: startDateTime,
         endTime: endDateTime,
         duration,
-        description: data.description,
+        description: data.description || "",
         billable: data.billable,
-        hourlyRate: data.hourlyRate,
-      });
+        hourlyRate: data.hourlyRate || "",
+      };
+
+      console.log("Sending manual time log data:", timeLogData);
+
+      await createTimeLog.mutateAsync(timeLogData);
 
       toast({
         title: "Time entry added",

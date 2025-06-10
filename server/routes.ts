@@ -430,14 +430,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startTime: req.body.startTime ? new Date(req.body.startTime) : new Date(),
         endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
       };
+      
+      console.log("Received time log data:", timeLogData);
+      
       const validatedData = insertTimeLogSchema.parse(timeLogData);
+      console.log("Validated data:", validatedData);
+      
       const timeLog = await storage.createTimeLog(validatedData);
       res.status(201).json(timeLog);
     } catch (error) {
+      console.error("Time log creation error:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create time log" });
+      console.error("Storage error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to create time log", error: errorMessage });
     }
   });
 

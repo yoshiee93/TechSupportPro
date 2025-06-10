@@ -568,10 +568,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTimeLog(insertTimeLog: InsertTimeLog): Promise<TimeLog> {
-    const [timeLog] = await db.insert(timeLogs).values({
+    const [timeLog] = await db.insert(timeLogs).values([{
       ...insertTimeLog,
       updatedAt: new Date(),
-    }).returning();
+    }]).returning();
     return timeLog;
   }
 
