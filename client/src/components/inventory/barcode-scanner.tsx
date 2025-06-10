@@ -39,7 +39,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: "environment" // Use rear camera if available
+          facingMode: "environment", // Use rear camera if available
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
         } 
       });
       setHasPermission(true);
@@ -53,6 +56,27 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       setHasPermission(false);
       setError("Camera access denied. Please allow camera access to scan barcodes.");
       return false;
+    }
+  };
+
+  const triggerFocus = async () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      const videoTrack = stream.getVideoTracks()[0];
+      
+      if (videoTrack && videoTrack.getCapabilities) {
+        try {
+          // Try to trigger autofocus by reapplying constraints
+          await videoTrack.applyConstraints({
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "environment"
+          });
+          console.log('Manual focus triggered via constraint reapplication');
+        } catch (err) {
+          console.log('Focus constraint failed:', err);
+        }
+      }
     }
   };
 
@@ -131,7 +155,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           }
         }
       );
-      console.log('Barcode scanner started successfully - try holding barcode steady in the frame');
+      
+      // Trigger focus after a short delay
+      setTimeout(() => {
+        triggerFocus();
+      }, 1000);
+      
+      console.log('Barcode scanner started successfully - camera will auto-focus for better detection');
     } catch (err) {
       console.error("Failed to start scanning:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -225,14 +255,25 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                 </div>
               </div>
               
-              <Button 
-                onClick={stopScanning} 
-                variant="outline" 
-                className="w-full"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Stop Scanning
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={triggerFocus} 
+                  variant="outline" 
+                  className="flex-1"
+                  title="Tap to refocus camera"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Focus
+                </Button>
+                <Button 
+                  onClick={stopScanning} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Stop
+                </Button>
+              </div>
             </div>
           )}
         </div>
