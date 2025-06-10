@@ -401,13 +401,35 @@ export class DatabaseStorage implements IStorage {
 
   private async generateTicketNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const [result] = await db
-      .select({ count: count() })
-      .from(tickets)
-      .where(like(tickets.ticketNumber, `TF-${year}-%`));
+    let attempts = 0;
+    const maxAttempts = 10;
     
-    const nextNumber = (result.count + 1).toString().padStart(3, '0');
-    return `TF-${year}-${nextNumber}`;
+    while (attempts < maxAttempts) {
+      const [result] = await db
+        .select({ count: count() })
+        .from(tickets)
+        .where(like(tickets.ticketNumber, `TF-${year}-%`));
+      
+      const nextNumber = (result.count + 1 + attempts).toString().padStart(3, '0');
+      const ticketNumber = `TF-${year}-${nextNumber}`;
+      
+      // Check if this number already exists
+      const [existing] = await db
+        .select({ id: tickets.id })
+        .from(tickets)
+        .where(eq(tickets.ticketNumber, ticketNumber))
+        .limit(1);
+      
+      if (!existing) {
+        return ticketNumber;
+      }
+      
+      attempts++;
+    }
+    
+    // Fallback to timestamp-based number if all attempts fail
+    const timestamp = Date.now().toString().slice(-6);
+    return `TF-${year}-${timestamp}`;
   }
 
   // Parts Orders

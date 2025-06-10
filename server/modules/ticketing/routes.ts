@@ -161,6 +161,27 @@ export function registerTicketingRoutes(app: Express) {
   });
 
   // Time logs
+  app.get("/api/time-logs/:ticketId", requireAuth, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const timeLogs = await storage.getTimeLogs(ticketId);
+      res.json(timeLogs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch time logs" });
+    }
+  });
+
+  app.get("/api/time-logs/:ticketId/active", requireAuth, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const technicianName = req.query.technician as string || "Unknown";
+      const activeTimeLog = await storage.getActiveTimeLog(ticketId, technicianName);
+      res.json(activeTimeLog || null);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active time log" });
+    }
+  });
+
   app.get("/api/tickets/:id/time-logs", requireAuth, async (req, res) => {
     try {
       const ticketId = parseInt(req.params.id);
@@ -168,6 +189,19 @@ export function registerTicketingRoutes(app: Express) {
       res.json(timeLogs);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch time logs" });
+    }
+  });
+
+  app.post("/api/time-logs", requireAuth, async (req, res) => {
+    try {
+      const timeLogData = insertTimeLogSchema.parse(req.body);
+      const timeLog = await storage.createTimeLog(timeLogData);
+      res.status(201).json(timeLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create time log" });
     }
   });
 
