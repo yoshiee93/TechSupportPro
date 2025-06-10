@@ -68,9 +68,9 @@ export default function Sidebar() {
           
           return (
             <Link key={item.name} href={item.href}>
-              <a
+              <div
                 className={cn(
-                  "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer",
                   isActive
                     ? "text-blue-700 bg-blue-50"
                     : "text-gray-600 hover:bg-gray-50"
@@ -91,16 +91,16 @@ export default function Sidebar() {
                     {item.badge}
                   </Badge>
                 )}
-              </a>
+              </div>
             </Link>
           );
         })}
         
         <div className="pt-4 border-t border-gray-200">
           <Link href="/settings">
-            <a
+            <div
               className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer",
                 location === "/settings"
                   ? "text-blue-700 bg-blue-50"
                   : "text-gray-600 hover:bg-gray-50"
@@ -108,7 +108,7 @@ export default function Sidebar() {
             >
               <Settings className="w-5 h-5 mr-3" />
               Settings
-            </a>
+            </div>
           </Link>
         </div>
       </nav>
