@@ -53,21 +53,37 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   };
 
   const startScanning = async () => {
-    if (!codeReader.current || !videoRef.current) return;
+    console.log('Start scanning button clicked');
+    
+    if (!codeReader.current || !videoRef.current) {
+      console.log('Missing codeReader or videoRef:', { 
+        hasCodeReader: !!codeReader.current, 
+        hasVideoRef: !!videoRef.current 
+      });
+      setError("Scanner not initialized properly");
+      return;
+    }
 
     try {
       setIsScanning(true);
       setError(null);
+      console.log('Requesting camera permission...');
 
       const hasCamera = await requestCameraPermission();
-      if (!hasCamera) return;
+      if (!hasCamera) {
+        console.log('Camera permission denied');
+        setIsScanning(false);
+        return;
+      }
 
+      console.log('Starting barcode scanning...');
       // Start decoding from video device
-      codeReader.current.decodeFromVideoDevice(
+      await codeReader.current.decodeFromVideoDevice(
         null, // Use default device
         videoRef.current,
         (result, error) => {
           if (result) {
+            console.log('Barcode detected:', result.getText());
             const scannedText = result.getText();
             onScan(scannedText);
             stopScanning();
@@ -79,9 +95,11 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           }
         }
       );
+      console.log('Barcode scanner started successfully');
     } catch (err) {
       console.error("Failed to start scanning:", err);
-      setError("Failed to start camera. Please check your camera permissions.");
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`Failed to start camera: ${errorMessage}`);
       setIsScanning(false);
     }
   };
