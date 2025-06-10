@@ -152,20 +152,39 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { username, firstName, lastName, email, role } = req.body;
+      
+      // Prevent admin from changing their own role
+      if (req.user && req.user.id === id && role && req.user.role !== role) {
+        return res.status(400).json({ message: "Cannot change your own role" });
+      }
+
+      const user = await storage.updateUser(id, { username, firstName, lastName, email, role });
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user", error: (error as Error).message });
+    }
+  });
+
   app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       
-      // Prevent admin from deactivating themselves
+      // Prevent admin from deleting themselves
       if (req.user && req.user.id === id) {
-        return res.status(400).json({ message: "Cannot deactivate your own account" });
+        return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      const user = await storage.deactivateUser(id);
-      const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Failed to deactivate user" });
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user", error: (error as Error).message });
     }
   });
 
