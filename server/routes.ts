@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, requireAuth, requireAdmin } from "./auth";
 import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertRepairNoteSchema, insertReminderSchema, insertTimeLogSchema } from "@shared/schema";
 import { z } from "zod";
 
