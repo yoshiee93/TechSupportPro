@@ -65,10 +65,10 @@ export default function Dashboard() {
 
   if (statsLoading || ticketsLoading || remindersLoading || partsLoading) {
     return (
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
             ))}
@@ -79,11 +79,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <div className="text-sm text-gray-500 flex items-center">
+    <div className="p-3 sm:p-6">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+          <div className="hidden sm:flex text-sm text-gray-500 items-center">
             <Calendar className="w-4 h-4 mr-1" />
             {format(new Date(), "MMMM d, yyyy")}
           </div>
@@ -91,74 +91,74 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Tickets</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.activeTickets || 0}</p>
-                <p className="text-sm text-green-600 flex items-center mt-1">
-                  <ArrowDownIcon className="w-4 h-4 mr-1" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active Tickets</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats?.activeTickets || 0}</p>
+                <p className="text-xs sm:text-sm text-green-600 flex items-center mt-1">
+                  <ArrowDownIcon className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
                   12% from last week
                 </p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <TicketIcon className="w-6 h-6 text-blue-600" />
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <TicketIcon className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Parts</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.pendingParts || 0}</p>
-                <p className="text-sm text-yellow-600 flex items-center mt-1">
-                  <Clock className="w-4 h-4 mr-1" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Parts</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats?.pendingParts || 0}</p>
+                <p className="text-xs sm:text-sm text-yellow-600 flex items-center mt-1">
+                  <Clock className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
                   {urgentReminders.length} overdue
                 </p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Cog className="w-6 h-6 text-yellow-600" />
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Cog className="w-5 sm:w-6 h-5 sm:h-6 text-yellow-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Ready for Pickup</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.readyForPickup || 0}</p>
-                <p className="text-sm text-green-600 flex items-center mt-1">
-                  <CheckCircle className="w-4 h-4 mr-1" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Ready for Pickup</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats?.readyForPickup || 0}</p>
+                <p className="text-xs sm:text-sm text-green-600 flex items-center mt-1">
+                  <CheckCircle className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
                   {stats?.completedToday || 0} collected today
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 sm:w-6 h-5 sm:h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Revenue This Month</p>
-                <p className="text-3xl font-bold text-gray-900">${(stats?.revenue || 0).toLocaleString()}</p>
-                <p className="text-sm text-green-600 flex items-center mt-1">
-                  <ArrowUpIcon className="w-4 h-4 mr-1" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Revenue This Month</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">${(stats?.revenue || 0).toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-green-600 flex items-center mt-1">
+                  <ArrowUpIcon className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
                   8% from last month
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 sm:w-6 h-5 sm:h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -166,7 +166,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Recent Tickets */}
         <div className="lg:col-span-2">
