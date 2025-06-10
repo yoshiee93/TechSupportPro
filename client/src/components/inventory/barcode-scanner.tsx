@@ -95,25 +95,36 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       }
 
       console.log('Starting barcode scanning...');
-      // Start decoding from video device
+      
+      // Start decoding with improved callback handling
       await codeReader.current.decodeFromVideoDevice(
         null, // Use default device
         videoRef.current,
         (result, error) => {
           if (result) {
-            console.log('Barcode detected:', result.getText());
+            console.log('Barcode detected successfully:', {
+              text: result.getText(),
+              format: result.getBarcodeFormat(),
+              timestamp: new Date().toISOString()
+            });
             const scannedText = result.getText();
             onScan(scannedText);
             stopScanning();
             onClose();
           }
           
+          // Log scanning attempts (but not NotFoundException which is normal)
           if (error && !(error instanceof NotFoundException)) {
             console.error("Scanning error:", error);
           }
+          
+          // Add periodic logging to show scanning is active
+          if (!result && Math.random() < 0.01) { // Log 1% of scans to show activity
+            console.log('Scanner actively looking for barcodes...');
+          }
         }
       );
-      console.log('Barcode scanner started successfully');
+      console.log('Barcode scanner started successfully - try holding barcode steady in the frame');
     } catch (err) {
       console.error("Failed to start scanning:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -198,9 +209,14 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                 </div>
               </div>
               
-              <p className="text-sm text-center text-gray-600">
-                Position the barcode within the frame to scan
-              </p>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">
+                  Position the barcode within the frame to scan
+                </p>
+                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                  💡 Tips: Hold steady, ensure good lighting, try different distances from camera
+                </div>
+              </div>
               
               <Button 
                 onClick={stopScanning} 
