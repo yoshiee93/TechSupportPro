@@ -79,7 +79,12 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => {
+        console.log("Form submit event triggered");
+        console.log("Form errors:", form.formState.errors);
+        console.log("Form values:", form.getValues());
+        form.handleSubmit(onSubmit)(e);
+      }} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -211,7 +216,11 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button 
+            type="submit" 
+            disabled={isPending}
+            onClick={() => console.log("Submit button clicked")}
+          >
             {isPending 
               ? (noteId ? "Updating..." : "Creating...") 
               : (noteId ? "Update Note" : "Create Note")
