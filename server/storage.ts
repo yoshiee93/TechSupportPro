@@ -1,6 +1,6 @@
 import { 
   users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs,
-  type User, type UpsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
+  type User, type UpsertUser, type InsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
   type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
@@ -10,6 +10,8 @@ import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, role: string): Promise<User>;
@@ -90,6 +92,19 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .returning();
     return user;
   }
 

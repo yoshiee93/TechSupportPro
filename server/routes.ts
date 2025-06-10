@@ -1,56 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth } from "./auth";
 import { insertClientSchema, insertDeviceSchema, insertTicketSchema, insertPartsOrderSchema, insertRepairNoteSchema, insertReminderSchema, insertTimeLogSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Admin user management routes
-  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  app.patch('/api/admin/users/:id/role', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { role } = req.body;
-      const user = await storage.updateUserRole(id, role);
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update user role" });
-    }
-  });
-
-  app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const user = await storage.deactivateUser(id);
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to deactivate user" });
-    }
-  });
+  setupAuth(app);
   // Clients
   app.get("/api/clients", async (req, res) => {
     try {
