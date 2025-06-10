@@ -54,10 +54,7 @@ export default function SupplierForm({ onSuccess, initialData }: SupplierFormPro
   });
 
   const createSupplierMutation = useMutation({
-    mutationFn: (data: FormValues) => apiRequest("/api/inventory/suppliers", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: FormValues) => apiRequest("POST", "/api/inventory/suppliers", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/suppliers"] });
       toast({
