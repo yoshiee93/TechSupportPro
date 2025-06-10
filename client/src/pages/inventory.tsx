@@ -226,8 +226,17 @@ export default function Inventory() {
                 placeholder="Search parts by SKU, name, or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-12"
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                onClick={() => setScannerOpen(true)}
+                title="Scan barcode to search"
+              >
+                <Scan className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
@@ -471,6 +480,14 @@ export default function Inventory() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleBarcodeScan}
+        title="Scan Part Barcode"
+      />
     </div>
   );
 }
