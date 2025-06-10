@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TicketForm from "@/components/ticket/ticket-form";
 import RepairNotesList from "@/components/repair/repair-notes-list";
 import TicketTimer from "@/components/timer/ticket-timer";
@@ -287,121 +288,130 @@ export default function Tickets() {
             </DialogHeader>
             
             <div className="space-y-6">
+              {/* Ticket Overview */}
               <div>
                 <h3 className="font-semibold text-lg mb-2">{selectedTicket.title}</h3>
-                <p className="text-gray-600">{selectedTicket.description}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Client Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium">{selectedTicket.client.name}</span>
-                    </div>
-                    {selectedTicket.client.email && (
+                <p className="text-gray-600 mb-4">{selectedTicket.description}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Client Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="flex items-center space-x-2">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{selectedTicket.client.email}</span>
+                        <span className="font-medium">{selectedTicket.client.name}</span>
                       </div>
-                    )}
-                    {selectedTicket.client.phone && (
-                      <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{selectedTicket.client.phone}</span>
-                      </div>
-                    )}
-                    {selectedTicket.client.address && (
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{selectedTicket.client.address}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Device Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Type:</span>
-                      <span className="capitalize">{selectedTicket.device.type}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Brand:</span>
-                      <span>{selectedTicket.device.brand}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Model:</span>
-                      <span>{selectedTicket.device.model}</span>
-                    </div>
-                    {selectedTicket.device.serialNumber && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Serial:</span>
-                        <span className="font-mono text-sm">{selectedTicket.device.serialNumber}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Timer and Time Tracking */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-6">
-                <TicketTimer ticketId={selectedTicket.id} />
-                <TimeLogsList ticketId={selectedTicket.id} />
-              </div>
-
-              {/* Photos & Attachments - Phase 2 Features */}
-              <div className="border-t pt-6 space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-blue-900">New Phase 2 Features</span>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Photo Upload & Gallery</span>
-                  </div>
-                </div>
-                <PhotoGallery ticketId={selectedTicket.id} />
-                <PhotoUpload 
-                  ticketId={selectedTicket.id} 
-                  onUploadComplete={() => {
-                    // Refresh ticket data to show new attachment
-                    window.location.reload();
-                  }} 
-                />
-              </div>
-
-              {/* Repair Notes */}
-              <div className="border-t pt-6">
-                <RepairNotesList ticketId={selectedTicket.id} />
-              </div>
-
-              {/* Activity Log */}
-              {selectedTicket.activityLogs && selectedTicket.activityLogs.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Activity Log</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedTicket.activityLogs.slice(0, 5).map((log: any) => (
-                        <div key={log.id} className="flex items-start space-x-3 pb-3 border-b border-gray-100 last:border-0">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{log.description}</p>
-                            <p className="text-xs text-gray-500">
-                              {format(new Date(log.createdAt), "MMM d, yyyy h:mm a")} by {log.createdBy}
-                            </p>
-                          </div>
+                      {selectedTicket.client.email && (
+                        <div className="flex items-center space-x-2">
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm">{selectedTicket.client.email}</span>
                         </div>
-                      ))}
+                      )}
+                      {selectedTicket.client.phone && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm">{selectedTicket.client.phone}</span>
+                        </div>
+                      )}
+                      {selectedTicket.client.address && (
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm">{selectedTicket.client.address}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Device Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Type:</span>
+                        <span className="capitalize">{selectedTicket.device.type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Brand:</span>
+                        <span>{selectedTicket.device.brand}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Model:</span>
+                        <span>{selectedTicket.device.model}</span>
+                      </div>
+                      {selectedTicket.device.serialNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Serial:</span>
+                          <span className="font-mono text-sm">{selectedTicket.device.serialNumber}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Tabbed Content */}
+              <Tabs defaultValue="notes" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="notes">Notes & Progress</TabsTrigger>
+                  <TabsTrigger value="photos">Photos & Files</TabsTrigger>
+                  <TabsTrigger value="time">Time Tracking</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="notes" className="space-y-6">
+                  <RepairNotesList ticketId={selectedTicket.id} />
+                  
+                  {/* Activity Log */}
+                  {selectedTicket.activityLogs && selectedTicket.activityLogs.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Activity Log</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {selectedTicket.activityLogs.slice(0, 5).map((log: any) => (
+                            <div key={log.id} className="flex items-start space-x-3 pb-3 border-b border-gray-100 last:border-0">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{log.description}</p>
+                                <p className="text-xs text-gray-500">
+                                  {format(new Date(log.createdAt), "MMM d, yyyy h:mm a")} by {log.createdBy}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="photos" className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium text-blue-900">Photo Upload & Gallery</span>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Phase 2 Feature</span>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                  <PhotoGallery ticketId={selectedTicket.id} />
+                  <PhotoUpload 
+                    ticketId={selectedTicket.id} 
+                    onUploadComplete={() => {
+                      // Refresh ticket data to show new attachment
+                      window.location.reload();
+                    }} 
+                  />
+                </TabsContent>
+                
+                <TabsContent value="time" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <TicketTimer ticketId={selectedTicket.id} />
+                    <TimeLogsList ticketId={selectedTicket.id} />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </DialogContent>
         </Dialog>
