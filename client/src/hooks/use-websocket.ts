@@ -20,9 +20,8 @@ export function useWebSocket() {
 
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
-      const wsUrl = `${protocol}//${host}:${port}/ws?token=${localStorage.getItem('auth_token') || ''}`;
+      // Use the same host and port as the current page
+      const wsUrl = `${protocol}//${window.location.host}/ws?token=${localStorage.getItem('auth_token') || ''}`;
       
       ws.current = new WebSocket(wsUrl);
 

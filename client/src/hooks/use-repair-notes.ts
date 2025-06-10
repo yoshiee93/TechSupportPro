@@ -21,11 +21,19 @@ export function useCreateRepairNote() {
   
   return useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", `/api/tickets/${data.ticketId}/repair-notes`, data);
+      console.log("Creating repair note with data:", data);
+      const response = await apiRequest("POST", `/api/tickets/${data.ticketId}/repair-notes`, data);
+      const result = await response.json();
+      console.log("API response:", result);
+      return result;
     },
     onSuccess: (newNote: any) => {
+      console.log("Mutation success, invalidating queries for ticket:", newNote.ticketId);
       queryClient.invalidateQueries({ queryKey: ["/api/tickets", newNote.ticketId, "repair-notes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+    },
+    onError: (error: any) => {
+      console.error("Mutation error:", error);
     },
   });
 }

@@ -51,19 +51,25 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
   });
 
   const onSubmit = async (data: any) => {
+    console.log("Form submission started with data:", data);
     try {
       if (noteId) {
-        await updateMutation.mutateAsync(data);
+        console.log("Updating note with ID:", noteId);
+        const result = await updateMutation.mutateAsync(data);
+        console.log("Update result:", result);
         toast({ title: "Repair note updated successfully" });
       } else {
-        await createMutation.mutateAsync(data);
+        console.log("Creating new note for ticket:", ticketId);
+        const result = await createMutation.mutateAsync(data);
+        console.log("Create result:", result);
         toast({ title: "Repair note created successfully" });
       }
       onSuccess?.();
     } catch (error: any) {
+      console.error("Form submission error:", error);
       toast({
         title: noteId ? "Error updating repair note" : "Error creating repair note",
-        description: error.message,
+        description: error.message || "Unknown error occurred",
         variant: "destructive",
       });
     }
