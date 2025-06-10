@@ -151,6 +151,115 @@ export const attachments = pgTable("attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Phase 3: Advanced Inventory Management Tables
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactPerson: text("contact_person"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  website: text("website"),
+  accountNumber: text("account_number"),
+  paymentTerms: text("payment_terms").default("NET30"), // NET30, NET15, COD, etc.
+  taxId: text("tax_id"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  parentId: integer("parent_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const parts = pgTable("parts", {
+  id: serial("id").primaryKey(),
+  sku: text("sku").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  categoryId: integer("category_id").references(() => categories.id),
+  supplierId: integer("supplier_id").references(() => suppliers.id),
+  supplierPartNumber: text("supplier_part_number"),
+  manufacturer: text("manufacturer"),
+  manufacturerPartNumber: text("manufacturer_part_number"),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).default("0.00"),
+  sellingPrice: decimal("selling_price", { precision: 10, scale: 2 }).default("0.00"),
+  markup: decimal("markup", { precision: 5, scale: 2 }).default("0.00"),
+  quantityOnHand: integer("quantity_on_hand").default(0),
+  quantityAllocated: integer("quantity_allocated").default(0),
+  quantityOnOrder: integer("quantity_on_order").default(0),
+  reorderPoint: integer("reorder_point").default(0),
+  reorderQuantity: integer("reorder_quantity").default(0),
+  maxStockLevel: integer("max_stock_level"),
+  location: text("location"), // warehouse location/bin
+  weight: decimal("weight", { precision: 8, scale: 3 }),
+  dimensions: text("dimensions"), // L x W x H
+  warrantyPeriod: integer("warranty_period"), // days
+  isActive: boolean("is_active").default(true),
+  isStocked: boolean("is_stocked").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  poNumber: text("po_number").notNull().unique(),
+  supplierId: integer("supplier_id").notNull().references(() => suppliers.id),
+  status: text("status").notNull().default("draft"), // draft, sent, confirmed, receiving, completed, cancelled
+  orderDate: timestamp("order_date").defaultNow().notNull(),
+  expectedDate: timestamp("expected_date"),
+  receivedDate: timestamp("received_date"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0.00"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0.00"),
+  shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).default("0.00"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).default("0.00"),
+  notes: text("notes"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: serial("id").primaryKey(),
+  purchaseOrderId: integer("purchase_order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
+  partId: integer("part_id").notNull().references(() => parts.id),
+  quantityOrdered: integer("quantity_ordered").notNull(),
+  quantityReceived: integer("quantity_received").default(0),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const stockMovements = pgTable("stock_movements", {
+  id: serial("id").primaryKey(),
+  partId: integer("part_id").notNull().references(() => parts.id),
+  movementType: text("movement_type").notNull(), // in, out, adjustment, transfer
+  quantity: integer("quantity").notNull(),
+  reason: text("reason").notNull(), // purchase, sale, adjustment, return, etc.
+  referenceId: integer("reference_id"), // ticket_id, purchase_order_id, etc.
+  referenceType: text("reference_type"), // ticket, purchase_order, adjustment
+  notes: text("notes"),
+  performedBy: text("performed_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const lowStockAlerts = pgTable("low_stock_alerts", {
+  id: serial("id").primaryKey(),
+  partId: integer("part_id").notNull().references(() => parts.id),
+  currentQuantity: integer("current_quantity").notNull(),
+  reorderPoint: integer("reorder_point").notNull(),
+  isResolved: boolean("is_resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const clientsRelations = relations(clients, ({ many }) => ({
   devices: many(devices),
@@ -228,6 +337,68 @@ export const attachmentsRelations = relations(attachments, ({ one }) => ({
   }),
 }));
 
+// Phase 3 Relations
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  parts: many(parts),
+  purchaseOrders: many(purchaseOrders),
+}));
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+  }),
+  children: many(categories),
+  parts: many(parts),
+}));
+
+export const partsRelations = relations(parts, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [parts.categoryId],
+    references: [categories.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [parts.supplierId],
+    references: [suppliers.id],
+  }),
+  purchaseOrderItems: many(purchaseOrderItems),
+  stockMovements: many(stockMovements),
+  lowStockAlerts: many(lowStockAlerts),
+}));
+
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  supplier: one(suppliers, {
+    fields: [purchaseOrders.supplierId],
+    references: [suppliers.id],
+  }),
+  items: many(purchaseOrderItems),
+}));
+
+export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderItems.purchaseOrderId],
+    references: [purchaseOrders.id],
+  }),
+  part: one(parts, {
+    fields: [purchaseOrderItems.partId],
+    references: [parts.id],
+  }),
+}));
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  part: one(parts, {
+    fields: [stockMovements.partId],
+    references: [parts.id],
+  }),
+}));
+
+export const lowStockAlertsRelations = relations(lowStockAlerts, ({ one }) => ({
+  part: one(parts, {
+    fields: [lowStockAlerts.partId],
+    references: [parts.id],
+  }),
+}));
+
 // Insert schemas
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
@@ -287,6 +458,46 @@ export const insertTimeLogSchema = z.object({
 });
 
 export const insertAttachmentSchema = createInsertSchema(attachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Phase 3 Insert Schemas
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPartSchema = createInsertSchema(parts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+  id: true,
+  poNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLowStockAlertSchema = createInsertSchema(lowStockAlerts).omit({
   id: true,
   createdAt: true,
 });
