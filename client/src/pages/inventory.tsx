@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import PartForm from "@/components/inventory/part-form";
+import SupplierForm from "@/components/inventory/supplier-form";
+import PurchaseOrderForm from "@/components/inventory/purchase-order-form";
 import { 
   Package, 
   Search, 
@@ -15,33 +20,51 @@ import {
   DollarSign,
   Users,
   ShoppingCart,
-  BarChart3
+  BarChart3,
+  Edit,
+  Trash2
 } from "lucide-react";
 
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [partDialogOpen, setPartDialogOpen] = useState(false);
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [poDialogOpen, setPODialogOpen] = useState(false);
 
-  // Mock data for demonstration
+  // Fetch real data from API
+  const { data: parts = [] } = useQuery({
+    queryKey: ["/api/inventory/parts"],
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["/api/inventory/suppliers"],
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/inventory/categories"],
+  });
+
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ["/api/inventory/purchase-orders"],
+  });
+
+  const { data: lowStockParts = [] } = useQuery({
+    queryKey: ["/api/inventory/parts/low-stock"],
+  });
+
+  const { data: stockMovements = [] } = useQuery({
+    queryKey: ["/api/inventory/stock-movements"],
+  });
+
+  // Calculate stats from real data
   const stats = {
-    totalParts: 1247,
-    lowStock: 23,
-    outOfStock: 5,
-    totalValue: 45670,
-    suppliers: 18,
-    categories: 12
+    totalParts: parts.length,
+    lowStock: lowStockParts.length,
+    outOfStock: parts.filter((part: any) => part.quantityOnHand === 0).length,
+    totalValue: parts.reduce((sum: number, part: any) => sum + (part.quantityOnHand || 0) * parseFloat(part.unitCost || "0"), 0),
+    suppliers: suppliers.length,
+    categories: categories.length
   };
-
-  const lowStockItems = [
-    { id: 1, sku: "LCD-IP12-BLK", name: "iPhone 12 LCD Screen", current: 2, reorder: 5, supplier: "TechParts Inc" },
-    { id: 2, sku: "BAT-SAM-S21", name: "Samsung S21 Battery", current: 1, reorder: 3, supplier: "Mobile Parts Co" },
-    { id: 3, sku: "CHG-USB-C", name: "USB-C Charging Port", current: 0, reorder: 10, supplier: "Universal Parts" },
-  ];
-
-  const recentMovements = [
-    { id: 1, part: "iPhone 13 Screen", type: "in", quantity: 10, reason: "Purchase Order #PO-2025-003", date: "2025-06-10" },
-    { id: 2, part: "Samsung Battery", type: "out", quantity: 2, reason: "Ticket #TF-2025-005", date: "2025-06-09" },
-    { id: 3, part: "USB-C Cable", type: "adjustment", quantity: -1, reason: "Inventory Count", date: "2025-06-09" },
-  ];
 
   const getMovementColor = (type: string) => {
     switch (type) {
@@ -58,37 +81,33 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
         <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
         <div className="flex space-x-2">
-          <Dialog>
+          <Dialog open={partDialogOpen} onOpenChange={setPartDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Part
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Part</DialogTitle>
               </DialogHeader>
-              <div className="text-center py-8 text-gray-500">
-                Part form will be implemented here
-              </div>
+              <PartForm onSuccess={() => setPartDialogOpen(false)} />
             </DialogContent>
           </Dialog>
           
-          <Dialog>
+          <Dialog open={poDialogOpen} onOpenChange={setPODialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Create PO
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Purchase Order</DialogTitle>
               </DialogHeader>
-              <div className="text-center py-8 text-gray-500">
-                Purchase order form will be implemented here
-              </div>
+              <PurchaseOrderForm onSuccess={() => setPODialogOpen(false)} />
             </DialogContent>
           </Dialog>
         </div>
