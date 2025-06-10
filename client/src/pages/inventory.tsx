@@ -79,8 +79,17 @@ export default function Inventory() {
   };
 
   const handleBarcodeScan = (scannedValue: string) => {
-    setSearchQuery(scannedValue);
-    // Could also lookup part directly here
+    console.log('Inventory page received barcode scan:', {
+      originalValue: scannedValue,
+      length: scannedValue.length,
+      type: typeof scannedValue,
+      trimmed: scannedValue.trim(),
+      timestamp: new Date().toISOString()
+    });
+    
+    const cleanedValue = scannedValue.trim();
+    setSearchQuery(cleanedValue);
+    console.log('Search query set to:', cleanedValue);
   };
 
   return (

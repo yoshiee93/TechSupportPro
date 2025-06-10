@@ -102,13 +102,20 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         videoRef.current,
         (result, error) => {
           if (result) {
+            const scannedText = result.getText();
             console.log('Barcode detected successfully:', {
-              text: result.getText(),
+              text: scannedText,
               format: result.getBarcodeFormat(),
+              length: scannedText.length,
+              rawBytes: Array.from(scannedText).map(c => c.charCodeAt(0)),
+              trimmed: scannedText.trim(),
               timestamp: new Date().toISOString()
             });
-            const scannedText = result.getText();
-            onScan(scannedText);
+            
+            // Ensure we pass a clean, consistent value
+            const cleanText = scannedText.trim();
+            console.log('Sending cleaned barcode to parent:', cleanText);
+            onScan(cleanText);
             stopScanning();
             onClose();
           }
