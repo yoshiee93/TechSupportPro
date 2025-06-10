@@ -32,7 +32,7 @@ export default function MobileNavigation({ onClose }: MobileNavigationProps) {
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home },
     { 
-      name: "Repair Tickets", 
+      name: "Tickets", 
       href: "/tickets", 
       icon: TicketIcon, 
       badge: stats?.activeTickets || 0 
