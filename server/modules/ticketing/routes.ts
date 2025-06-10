@@ -130,13 +130,25 @@ export function registerTicketingRoutes(app: Express) {
   app.post("/api/tickets/:id/repair-notes", requireAuth, async (req, res) => {
     try {
       const ticketId = parseInt(req.params.id);
+      const userId = (req as any).user?.id;
+      
+      console.log("Creating repair note for ticket:", ticketId, "by user:", userId);
+      console.log("Request body:", req.body);
+      
       const repairNoteData = insertRepairNoteSchema.parse({
         ...req.body,
-        ticketId
+        ticketId,
+        userId
       });
+      
+      console.log("Parsed repair note data:", repairNoteData);
+      
       const repairNote = await storage.createRepairNote(repairNoteData);
+      console.log("Created repair note:", repairNote);
+      
       res.status(201).json(repairNote);
     } catch (error) {
+      console.error("Repair note creation error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid repair note data", errors: error.errors });
       }

@@ -40,6 +40,7 @@ export default function RepairNotesForm({ ticketId, onSuccess, noteId, initialDa
     resolver: zodResolver(insertRepairNoteSchema),
     defaultValues: {
       ticketId: ticketId,
+      userId: (user as any)?.id || "",
       type: initialData?.type || "diagnostic",
       title: initialData?.title || "",
       content: initialData?.content || "",
