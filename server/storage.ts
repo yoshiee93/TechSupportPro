@@ -1,8 +1,12 @@
 import { 
   users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs, attachments,
+  suppliers, categories, parts, purchaseOrders, purchaseOrderItems, stockMovements, lowStockAlerts,
   type User, type UpsertUser, type InsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog, type Attachment,
+  type Supplier, type Category, type Part, type PurchaseOrder, type PurchaseOrderItem, type StockMovement, type LowStockAlert,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
-  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type InsertAttachment, type TicketWithRelations, type ClientWithDevices
+  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type InsertAttachment,
+  type InsertSupplier, type InsertCategory, type InsertPart, type InsertPurchaseOrder, type InsertPurchaseOrderItem, type InsertStockMovement, type InsertLowStockAlert,
+  type TicketWithRelations, type ClientWithDevices, type PartWithRelations, type PurchaseOrderWithRelations, type CategoryWithParent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
@@ -94,6 +98,52 @@ export interface IStorage {
     partsReceivedToday: number;
     revenueToday: number;
   }>;
+
+  // Phase 3: Inventory Management
+  // Suppliers
+  getSuppliers(): Promise<Supplier[]>;
+  getSupplier(id: number): Promise<Supplier | undefined>;
+  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: number, supplier: Partial<InsertSupplier>): Promise<Supplier>;
+  deleteSupplier(id: number): Promise<void>;
+
+  // Categories
+  getCategories(): Promise<CategoryWithParent[]>;
+  getCategory(id: number): Promise<CategoryWithParent | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
+  deleteCategory(id: number): Promise<void>;
+
+  // Parts
+  getParts(): Promise<PartWithRelations[]>;
+  getPart(id: number): Promise<PartWithRelations | undefined>;
+  getPartBySku(sku: string): Promise<PartWithRelations | undefined>;
+  createPart(part: InsertPart): Promise<Part>;
+  updatePart(id: number, part: Partial<InsertPart>): Promise<Part>;
+  deletePart(id: number): Promise<void>;
+  searchParts(query: string): Promise<PartWithRelations[]>;
+  getLowStockParts(): Promise<PartWithRelations[]>;
+
+  // Purchase Orders
+  getPurchaseOrders(): Promise<PurchaseOrderWithRelations[]>;
+  getPurchaseOrder(id: number): Promise<PurchaseOrderWithRelations | undefined>;
+  createPurchaseOrder(po: InsertPurchaseOrder): Promise<PurchaseOrder>;
+  updatePurchaseOrder(id: number, po: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder>;
+  deletePurchaseOrder(id: number): Promise<void>;
+
+  // Purchase Order Items
+  createPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem>;
+  updatePurchaseOrderItem(id: number, item: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem>;
+  deletePurchaseOrderItem(id: number): Promise<void>;
+
+  // Stock Movements
+  getStockMovements(partId?: number): Promise<StockMovement[]>;
+  createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
+  
+  // Low Stock Alerts
+  getLowStockAlerts(): Promise<LowStockAlert[]>;
+  createLowStockAlert(alert: InsertLowStockAlert): Promise<LowStockAlert>;
+  resolveLowStockAlert(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

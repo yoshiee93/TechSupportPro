@@ -12,6 +12,7 @@ import Tickets from "@/pages/tickets";
 import Clients from "@/pages/clients";
 import Devices from "@/pages/devices";
 import Parts from "@/pages/parts";
+import Inventory from "@/pages/inventory";
 import Admin from "@/pages/admin";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";

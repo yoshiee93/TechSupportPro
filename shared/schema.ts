@@ -534,6 +534,15 @@ export type InsertReminder = z.infer<typeof insertReminderSchema>;
 export type InsertTimeLog = z.infer<typeof insertTimeLogSchema>;
 export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
 
+// Phase 3 Types
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type InsertPart = z.infer<typeof insertPartSchema>;
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
+export type InsertLowStockAlert = z.infer<typeof insertLowStockAlertSchema>;
+
 export type Client = typeof clients.$inferSelect;
 export type Device = typeof devices.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
@@ -543,6 +552,15 @@ export type RepairNote = typeof repairNotes.$inferSelect;
 export type Reminder = typeof reminders.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
 export type Attachment = typeof attachments.$inferSelect;
+
+// Phase 3 Select Types
+export type Supplier = typeof suppliers.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type Part = typeof parts.$inferSelect;
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type LowStockAlert = typeof lowStockAlerts.$inferSelect;
 
 // Extended types with relations
 export type TicketWithRelations = Ticket & {
@@ -560,4 +578,22 @@ export type ClientWithDevices = Client & {
 
 export type DeviceWithClient = Device & {
   client: Client;
+};
+
+// Phase 3 Extended Types
+export type PartWithRelations = Part & {
+  category?: Category;
+  supplier?: Supplier;
+  stockMovements?: StockMovement[];
+  lowStockAlerts?: LowStockAlert[];
+};
+
+export type PurchaseOrderWithRelations = PurchaseOrder & {
+  supplier: Supplier;
+  items: (PurchaseOrderItem & { part: Part })[];
+};
+
+export type CategoryWithParent = Category & {
+  parent?: Category;
+  children?: Category[];
 };
