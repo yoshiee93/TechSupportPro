@@ -1,8 +1,8 @@
 import { 
-  users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs,
-  type User, type UpsertUser, type InsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog,
+  users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs, attachments,
+  type User, type UpsertUser, type InsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog, type Attachment,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
-  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type TicketWithRelations, type ClientWithDevices
+  type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type InsertAttachment, type TicketWithRelations, type ClientWithDevices
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
@@ -76,6 +76,12 @@ export interface IStorage {
   updateTimeLog(id: number, timeLog: Partial<InsertTimeLog>): Promise<TimeLog>;
   deleteTimeLog(id: number): Promise<void>;
   stopTimeLog(id: number, endTime?: Date): Promise<TimeLog>;
+
+  // Attachments
+  getAttachment(id: number): Promise<Attachment | undefined>;
+  getAttachmentsByTicket(ticketId: number): Promise<Attachment[]>;
+  createAttachment(attachment: InsertAttachment): Promise<Attachment>;
+  deleteAttachment(id: number): Promise<void>;
 
   // Dashboard Stats
   getDashboardStats(): Promise<{
@@ -682,6 +688,27 @@ export class DatabaseStorage implements IStorage {
     
     console.log("Storage: Updated time log:", JSON.stringify(updated, null, 2));
     return updated;
+  }
+
+  // Attachments
+  async getAttachment(id: number): Promise<Attachment | undefined> {
+    const [attachment] = await db.select().from(attachments).where(eq(attachments.id, id));
+    return attachment || undefined;
+  }
+
+  async getAttachmentsByTicket(ticketId: number): Promise<Attachment[]> {
+    return await db.select().from(attachments)
+      .where(eq(attachments.ticketId, ticketId))
+      .orderBy(desc(attachments.createdAt));
+  }
+
+  async createAttachment(insertAttachment: InsertAttachment): Promise<Attachment> {
+    const [attachment] = await db.insert(attachments).values(insertAttachment).returning();
+    return attachment;
+  }
+
+  async deleteAttachment(id: number): Promise<void> {
+    await db.delete(attachments).where(eq(attachments.id, id));
   }
 
   // Dashboard Stats
