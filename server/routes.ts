@@ -7,6 +7,7 @@ import { registerTicketingRoutes } from "./modules/ticketing/routes";
 import { registerInventoryRoutes } from "./modules/inventory/routes";
 import { registerOrderingRoutes } from "./modules/ordering/routes";
 import { errorHandler } from "./shared/middleware/error-handler";
+import { setupWebSocket } from "./websocket";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth setup
@@ -24,6 +25,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create HTTP server
   const server = createServer(app);
+
+  // Setup WebSocket
+  setupWebSocket(server);
 
   return server;
 }

@@ -3,6 +3,7 @@ import { storage } from "../../storage";
 import { requireAuth } from "../../auth";
 import { insertTicketSchema, insertRepairNoteSchema, insertTimeLogSchema } from "@shared/schema";
 import { z } from "zod";
+import { getWebSocketManager } from "../../websocket";
 
 export function registerTicketingRoutes(app: Express) {
   // Get all tickets with search
@@ -56,6 +57,13 @@ export function registerTicketingRoutes(app: Express) {
       const ticketData = insertTicketSchema.parse(req.body);
       console.log("Validated ticket data:", ticketData);
       const ticket = await storage.createTicket(ticketData);
+      
+      // Notify WebSocket clients about new ticket
+      const wsManager = getWebSocketManager();
+      if (wsManager) {
+        wsManager.notifyTicketUpdate(ticket.id, 'created', ticket, req.user?.id);
+      }
+      
       res.status(201).json(ticket);
     } catch (error) {
       console.error("Ticket creation error:", error);
@@ -202,6 +210,12 @@ export function registerTicketingRoutes(app: Express) {
       
       const timeLog = await storage.createTimeLog(timeLogData);
       console.log("Created time log:", JSON.stringify(timeLog, null, 2));
+      
+      // Notify WebSocket clients about timer start
+      const wsManager = getWebSocketManager();
+      if (wsManager) {
+        wsManager.notifyTimerUpdate(timeLog.ticketId, timeLog, req.user?.id);
+      }
       
       res.status(201).json(timeLog);
     } catch (error) {
