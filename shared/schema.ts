@@ -236,14 +236,12 @@ export const insertPartsOrderSchema = createInsertSchema(partsOrders).omit({
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   createdAt: true,
-  createdBy: true,
 });
 
 export const insertRepairNoteSchema = createInsertSchema(repairNotes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  technicianName: true,
 });
 
 export const insertReminderSchema = createInsertSchema(reminders).omit({
