@@ -224,27 +224,27 @@ export default function Inventory() {
           </div>
 
           {/* Low Stock Alerts */}
-          {lowStockItems.length > 0 && (
+          {lowStockParts.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-yellow-600">
                   <AlertTriangle className="w-5 h-5 mr-2" />
-                  Low Stock Alerts ({lowStockItems.length})
+                  Low Stock Alerts ({lowStockParts.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {lowStockItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  {lowStockParts.map((part: any) => (
+                    <div key={part.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                            {item.sku}
+                            {part.sku}
                           </Badge>
-                          <span className="font-medium">{item.name}</span>
+                          <span className="font-medium">{part.name}</span>
                         </div>
                         <p className="text-sm text-gray-600 mt-1">
-                          Current: {item.current} | Reorder Point: {item.reorder} | Supplier: {item.supplier}
+                          Current: {part.quantityOnHand || 0} | Reorder Point: {part.reorderPoint || 0} | Location: {part.location || 'N/A'}
                         </p>
                       </div>
                       <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700">
@@ -263,25 +263,123 @@ export default function Inventory() {
               <CardTitle>Parts Inventory</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>Parts inventory table will be implemented here</p>
-                <p className="text-sm mt-1">This will show paginated parts with SKU, name, stock levels, and actions</p>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>On Hand</TableHead>
+                    <TableHead>Unit Cost</TableHead>
+                    <TableHead>Selling Price</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {parts.map((part: any) => (
+                    <TableRow key={part.id}>
+                      <TableCell>
+                        <Badge variant="outline">{part.sku}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{part.name}</TableCell>
+                      <TableCell>{part.categoryId || 'N/A'}</TableCell>
+                      <TableCell>
+                        <span className={`font-medium ${(part.quantityOnHand || 0) <= (part.reorderPoint || 0) ? 'text-red-600' : 'text-green-600'}`}>
+                          {part.quantityOnHand || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell>${parseFloat(part.unitCost || "0").toFixed(2)}</TableCell>
+                      <TableCell>${parseFloat(part.sellingPrice || "0").toFixed(2)}</TableCell>
+                      <TableCell>{part.location || 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {parts.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No parts found</p>
+                  <p className="text-sm mt-1">Add your first part to get started</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="suppliers" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Suppliers</h2>
+            <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Supplier
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New Supplier</DialogTitle>
+                </DialogHeader>
+                <SupplierForm onSuccess={() => setSupplierDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <Card>
-            <CardHeader>
-              <CardTitle>Suppliers</CardTitle>
-            </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>Suppliers management will be implemented here</p>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Payment Terms</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {suppliers.map((supplier: any) => (
+                    <TableRow key={supplier.id}>
+                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell>{supplier.contactPerson || 'N/A'}</TableCell>
+                      <TableCell>{supplier.email || 'N/A'}</TableCell>
+                      <TableCell>{supplier.phone || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{supplier.paymentTerms}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {suppliers.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No suppliers found</p>
+                  <p className="text-sm mt-1">Add your first supplier to get started</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -308,25 +406,32 @@ export default function Inventory() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentMovements.map((movement) => (
+                {stockMovements.slice(0, 10).map((movement: any) => (
                   <div key={movement.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <Badge className={getMovementColor(movement.type)}>
-                          {movement.type.toUpperCase()}
+                        <Badge className={getMovementColor(movement.movementType)}>
+                          {movement.movementType.toUpperCase()}
                         </Badge>
-                        <span className="font-medium">{movement.part}</span>
+                        <span className="font-medium">Part ID: {movement.partId}</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
                         Quantity: {movement.quantity > 0 ? '+' : ''}{movement.quantity} | {movement.reason}
                       </p>
                     </div>
                     <div className="text-sm text-gray-500">
-                      {movement.date}
+                      {new Date(movement.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 ))}
               </div>
+              {stockMovements.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No stock movements found</p>
+                  <p className="text-sm mt-1">Stock movements will appear here as you manage inventory</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
