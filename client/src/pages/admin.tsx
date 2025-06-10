@@ -245,6 +245,15 @@ export default function Admin() {
                     
                     {user.id !== (currentUser as any)?.id && user.isActive && (
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                        
                         <Select
                           value={user.role}
                           onValueChange={(role) => updateRoleMutation.mutate({ userId: user.id, role })}
@@ -266,14 +275,14 @@ export default function Admin() {
                               size="sm"
                               disabled={deleteUserMutation.isPending}
                             >
-                              Deactivate
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Deactivate User</AlertDialogTitle>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to deactivate this user? They will no longer be able to access the system.
+                                Are you sure you want to delete this user? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -282,7 +291,7 @@ export default function Admin() {
                                 onClick={() => deleteUserMutation.mutate(user.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Deactivate
+                                Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
