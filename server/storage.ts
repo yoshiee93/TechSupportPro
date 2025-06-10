@@ -1038,7 +1038,7 @@ export class DatabaseStorage implements IStorage {
     const movement = result[0];
     const currentPart = await this.getPart(movement.partId);
     if (currentPart) {
-      let newQuantity = currentPart.quantityOnHand || 0;
+      let newQuantity = (currentPart.quantityOnHand ?? 0);
       
       if (movement.movementType === "in") {
         newQuantity += movement.quantity;
@@ -1048,14 +1048,15 @@ export class DatabaseStorage implements IStorage {
         newQuantity = movement.quantity; // Adjustment sets absolute quantity
       }
       
-      await this.updatePart(movement.partId, { quantityOnHand: Math.max(0, newQuantity) });
+      const finalQuantity = Math.max(0, newQuantity);
+      await this.updatePart(movement.partId, { quantityOnHand: finalQuantity });
       
       // Check for low stock alerts
-      const reorderPoint = currentPart.reorderPoint || 0;
-      if (newQuantity <= reorderPoint) {
+      const reorderPoint = (currentPart.reorderPoint ?? 0);
+      if (finalQuantity <= reorderPoint) {
         await this.createLowStockAlert({
           partId: movement.partId,
-          currentQuantity: newQuantity,
+          currentQuantity: finalQuantity,
           reorderPoint: reorderPoint
         });
       }
