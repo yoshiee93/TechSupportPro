@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5,6 +6,7 @@ import { insertPartSchema } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import BarcodeScanner from "./barcode-scanner";
 import {
   Form,
   FormControl,
@@ -24,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Scan } from "lucide-react";
 
 const formSchema = insertPartSchema.extend({
   categoryId: z.number().optional(),
@@ -38,6 +41,7 @@ interface PartFormProps {
 }
 
 export default function PartForm({ onSuccess, initialData }: PartFormProps) {
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
