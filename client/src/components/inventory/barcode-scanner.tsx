@@ -244,6 +244,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     
     try {
       // Start with new camera
+      if (!codeReader.current) {
+        codeReader.current = new BrowserMultiFormatReader();
+      }
+      
       await codeReader.current.decodeFromVideoDevice(
         newCameraId,
         videoRef.current,
