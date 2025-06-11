@@ -1126,6 +1126,248 @@ export class DatabaseStorage implements IStorage {
       .set({ isResolved: true, resolvedAt: new Date() })
       .where(eq(lowStockAlerts.id, id));
   }
+
+  // Phase 3.5: Billing & Sales Implementation
+  
+  // Billable Items
+  async getBillableItems(ticketId?: number): Promise<BillableItemWithTicket[]> {
+    let query = db.select()
+      .from(billableItems)
+      .leftJoin(tickets, eq(billableItems.ticketId, tickets.id))
+      .leftJoin(clients, eq(tickets.clientId, clients.id))
+      .leftJoin(devices, eq(tickets.deviceId, devices.id))
+      .orderBy(desc(billableItems.createdAt));
+
+    if (ticketId) {
+      query = query.where(eq(billableItems.ticketId, ticketId));
+    }
+
+    const result = await query;
+    
+    return result.map(row => ({
+      ...row.billable_items,
+      ticket: {
+        ...row.tickets,
+        client: row.clients,
+        device: row.devices,
+        partsOrders: [],
+        activityLogs: [],
+        repairNotes: [],
+        timeLogs: []
+      }
+    })) as BillableItemWithTicket[];
+  }
+
+  async getUnbilledItems(): Promise<BillableItemWithTicket[]> {
+    const result = await db.select()
+      .from(billableItems)
+      .leftJoin(tickets, eq(billableItems.ticketId, tickets.id))
+      .leftJoin(clients, eq(tickets.clientId, clients.id))
+      .leftJoin(devices, eq(tickets.deviceId, devices.id))
+      .where(eq(billableItems.billingStatus, 'pending'))
+      .orderBy(desc(billableItems.createdAt));
+    
+    return result.map(row => ({
+      ...row.billable_items,
+      ticket: {
+        ...row.tickets,
+        client: row.clients,
+        device: row.devices,
+        partsOrders: [],
+        activityLogs: [],
+        repairNotes: [],
+        timeLogs: []
+      }
+    })) as BillableItemWithTicket[];
+  }
+
+  async createBillableItem(item: InsertBillableItem): Promise<BillableItem> {
+    const result = await db.insert(billableItems).values(item).returning();
+    return result[0];
+  }
+
+  async updateBillableItem(id: number, item: Partial<InsertBillableItem>): Promise<BillableItem> {
+    const result = await db.update(billableItems)
+      .set(item)
+      .where(eq(billableItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async markItemsAsBilled(itemIds: number[]): Promise<void> {
+    await db.update(billableItems)
+      .set({ 
+        billingStatus: 'billed',
+        billedDate: new Date()
+      })
+      .where(inArray(billableItems.id, itemIds));
+  }
+
+  async deleteBillableItem(id: number): Promise<void> {
+    await db.delete(billableItems).where(eq(billableItems.id, id));
+  }
+
+  // Sales Transactions
+  async getSalesTransactions(): Promise<SalesTransactionWithRelations[]> {
+    const result = await db.select()
+      .from(salesTransactions)
+      .leftJoin(clients, eq(salesTransactions.clientId, clients.id))
+      .leftJoin(users, eq(salesTransactions.createdByUserId, users.id))
+      .orderBy(desc(salesTransactions.createdAt));
+
+    const transactionsWithRelations = [];
+    
+    for (const row of result) {
+      const items = await db.select()
+        .from(saleItems)
+        .leftJoin(parts, eq(saleItems.partId, parts.id))
+        .where(eq(saleItems.transactionId, row.sales_transactions.id));
+
+      const paymentsData = await db.select()
+        .from(payments)
+        .where(eq(payments.transactionId, row.sales_transactions.id));
+
+      transactionsWithRelations.push({
+        ...row.sales_transactions,
+        client: row.clients,
+        createdBy: row.users,
+        items: items.map(item => ({
+          ...item.sale_items,
+          part: item.parts
+        })),
+        payments: paymentsData
+      });
+    }
+
+    return transactionsWithRelations as SalesTransactionWithRelations[];
+  }
+
+  async getSalesTransaction(id: number): Promise<SalesTransactionWithRelations | undefined> {
+    const result = await db.select()
+      .from(salesTransactions)
+      .leftJoin(clients, eq(salesTransactions.clientId, clients.id))
+      .leftJoin(users, eq(salesTransactions.createdByUserId, users.id))
+      .where(eq(salesTransactions.id, id));
+
+    if (result.length === 0) return undefined;
+
+    const row = result[0];
+    
+    const items = await db.select()
+      .from(saleItems)
+      .leftJoin(parts, eq(saleItems.partId, parts.id))
+      .where(eq(saleItems.transactionId, id));
+
+    const paymentsResult = await db.select()
+      .from(payments)
+      .where(eq(payments.transactionId, id));
+
+    return {
+      ...row.sales_transactions,
+      client: row.clients,
+      createdBy: row.users,
+      items: items.map(item => ({
+        ...item.sale_items,
+        part: item.parts
+      })),
+      payments: paymentsResult
+    } as SalesTransactionWithRelations;
+  }
+
+  async createSalesTransaction(transaction: InsertSalesTransaction): Promise<SalesTransaction> {
+    const result = await db.insert(salesTransactions).values(transaction).returning();
+    return result[0];
+  }
+
+  async updateSalesTransaction(id: number, transaction: Partial<InsertSalesTransaction>): Promise<SalesTransaction> {
+    const result = await db.update(salesTransactions)
+      .set(transaction)
+      .where(eq(salesTransactions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSalesTransaction(id: number): Promise<void> {
+    // Delete related items and payments first
+    await db.delete(saleItems).where(eq(saleItems.transactionId, id));
+    await db.delete(payments).where(eq(payments.transactionId, id));
+    await db.delete(salesTransactions).where(eq(salesTransactions.id, id));
+  }
+
+  // Sale Items
+  async createSaleItem(item: InsertSaleItem): Promise<SaleItem> {
+    const result = await db.insert(saleItems).values(item).returning();
+    
+    // Update inventory if part is linked
+    if (item.partId) {
+      const quantity = parseFloat(item.quantity as string);
+      // Create stock movement record
+      await this.createStockMovement({
+        partId: item.partId,
+        movementType: 'outbound',
+        quantity: -quantity,
+        reason: 'Sale',
+        performedBy: 'System'
+      });
+    }
+    
+    return result[0];
+  }
+
+  async updateSaleItem(id: number, item: Partial<InsertSaleItem>): Promise<SaleItem> {
+    const result = await db.update(saleItems)
+      .set(item)
+      .where(eq(saleItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSaleItem(id: number): Promise<void> {
+    // Get the item details before deletion for inventory adjustment
+    const [item] = await db.select().from(saleItems).where(eq(saleItems.id, id));
+    
+    if (item && item.partId) {
+      const quantity = parseFloat(item.quantity as string);
+      // Create stock movement record for reversal
+      await this.createStockMovement({
+        partId: item.partId,
+        movementType: 'inbound',
+        quantity: quantity,
+        reason: 'Sale Reversal',
+        performedBy: 'System'
+      });
+    }
+    
+    await db.delete(saleItems).where(eq(saleItems.id, id));
+  }
+
+  // Payments (future-proofed)
+  async getPayments(transactionId?: number): Promise<Payment[]> {
+    const query = db.select().from(payments).orderBy(desc(payments.createdAt));
+    
+    if (transactionId) {
+      query.where(eq(payments.transactionId, transactionId));
+    }
+    
+    return await query;
+  }
+
+  async createPayment(payment: InsertPayment): Promise<Payment> {
+    const result = await db.insert(payments).values(payment).returning();
+    return result[0];
+  }
+
+  async updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment> {
+    const result = await db.update(payments)
+      .set(payment)
+      .where(eq(payments.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePayment(id: number): Promise<void> {
+    await db.delete(payments).where(eq(payments.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();
