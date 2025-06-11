@@ -16,7 +16,8 @@ import {
   Shield,
   Warehouse,
   Receipt,
-  ShoppingCart
+  ShoppingCart,
+  Brain
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -53,6 +54,11 @@ export default function Sidebar() {
       name: "Billing", 
       href: "/billing", 
       icon: Receipt 
+    },
+    { 
+      name: "AI Insights", 
+      href: "/ai-insights", 
+      icon: Brain 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },
