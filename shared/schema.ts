@@ -604,6 +604,10 @@ export const insertLowStockAlertSchema = createInsertSchema(lowStockAlerts).omit
 export const insertBillableItemSchema = createInsertSchema(billableItems).omit({
   id: true,
   createdAt: true,
+}).extend({
+  quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  lineTotal: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 export const insertSalesTransactionSchema = createInsertSchema(salesTransactions).omit({

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -188,6 +188,9 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Billable Item</DialogTitle>
+                <DialogDescription>
+                  Add parts or labor charges to this repair ticket for billing.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>

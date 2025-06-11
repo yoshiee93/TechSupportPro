@@ -213,11 +213,17 @@ router.get("/billable-items/ticket/:ticketId", requireAuth, async (req, res) => 
 // Add billable item to ticket
 router.post("/billable-items", requireAuth, async (req, res) => {
   try {
-    const itemData = req.body;
-    const item = await storage.createBillableItem(itemData);
+    console.log("Received billable item data:", req.body);
+    const data = insertBillableItemSchema.parse(req.body);
+    console.log("Parsed billable item data:", data);
+    const item = await storage.createBillableItem(data);
     res.json(item);
   } catch (error) {
     console.error("Error creating billable item:", error);
+    if (error instanceof z.ZodError) {
+      console.error("Validation errors:", error.issues);
+      return res.status(400).json({ error: "Validation failed", details: error.issues });
+    }
     res.status(500).json({ error: "Failed to create billable item" });
   }
 });
