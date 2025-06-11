@@ -44,54 +44,65 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...');
       
-      // Get available camera devices to select the best one
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log('Available camera devices:', videoDevices.map(d => ({ label: d.label, deviceId: d.deviceId })));
-      
       let stream;
       
-      // Try to find the main rear camera (usually has "back" or "rear" in label, or is the first environment camera)
-      const rearCameras = videoDevices.filter(device => 
-        device.label.toLowerCase().includes('back') || 
-        device.label.toLowerCase().includes('rear') ||
-        device.label.toLowerCase().includes('main') ||
-        device.label.toLowerCase().includes('camera 0')
-      );
-      
-      if (rearCameras.length > 0) {
-        // Try each rear camera device, preferring main camera over wide-angle
-        for (const camera of rearCameras) {
-          try {
-            console.log(`Trying camera: ${camera.label} (${camera.deviceId})`);
-            stream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                deviceId: { exact: camera.deviceId },
-                width: { ideal: 1920, min: 1280 },
-                height: { ideal: 1080, min: 720 },
-                focusMode: "continuous"
-              } as any
-            });
-            console.log(`Successfully using camera: ${camera.label}`);
-            break;
-          } catch (deviceErr) {
-            console.log(`Camera ${camera.label} failed:`, deviceErr);
-            continue;
+      // Try progressive camera configurations for Samsung optimization
+      const cameraConfigs = [
+        {
+          name: "High resolution with manual focus",
+          config: {
+            facingMode: "environment",
+            width: { exact: 1920 },
+            height: { exact: 1080 },
+            focusMode: "manual",
+            focusDistance: { ideal: 0.1 }
           }
+        },
+        {
+          name: "Medium resolution with continuous focus",
+          config: {
+            facingMode: "environment", 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            focusMode: "continuous"
+          }
+        },
+        {
+          name: "Standard environment camera",
+          config: {
+            facingMode: "environment"
+          }
+        }
+      ];
+      
+      for (const cameraConfig of cameraConfigs) {
+        try {
+          console.log(`Trying ${cameraConfig.name}...`);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: cameraConfig.config as any
+          });
+          console.log(`Successfully acquired: ${cameraConfig.name}`);
+          
+          // Log the actual settings we got
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            const settings = track.getSettings();
+            console.log('Camera settings:', {
+              width: settings.width,
+              height: settings.height,
+              focusMode: (settings as any).focusMode,
+              facingMode: settings.facingMode
+            });
+          }
+          break;
+        } catch (err) {
+          console.log(`${cameraConfig.name} failed:`, err);
+          continue;
         }
       }
       
-      // If no specific device worked, try basic environment camera
       if (!stream) {
-        console.log('Falling back to basic environment camera...');
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        });
-        console.log('Using basic environment camera');
+        throw new Error('No camera configuration worked');
       }
       
       setHasPermission(true);
