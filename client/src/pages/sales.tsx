@@ -206,6 +206,8 @@ export default function SalesPage() {
   };
 
   const handleCompleteSale = (formData: SalesTransactionFormData) => {
+    console.log('Complete Sale clicked!', formData);
+    
     if (saleItems.length === 0) {
       toast({
         title: "No items",
@@ -236,6 +238,7 @@ export default function SalesPage() {
       })),
     };
 
+    console.log('Sending transaction data:', transactionData);
     createSaleMutation.mutate(transactionData);
   };
 
