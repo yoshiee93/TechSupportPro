@@ -235,15 +235,20 @@ export default function Tickets() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center justify-between">
-                <DialogTitle className="flex items-center space-x-3">
-                  <span>{selectedTicket.ticketNumber}</span>
-                  <Badge className={getStatusColor(selectedTicket.status)}>
-                    {selectedTicket.status.replace("_", " ")}
-                  </Badge>
-                  <Badge className={getPriorityColor(selectedTicket.priority)}>
-                    {selectedTicket.priority}
-                  </Badge>
-                </DialogTitle>
+                <div>
+                  <DialogTitle className="flex items-center space-x-3">
+                    <span>{selectedTicket.ticketNumber}</span>
+                    <Badge className={getStatusColor(selectedTicket.status)}>
+                      {selectedTicket.status.replace("_", " ")}
+                    </Badge>
+                    <Badge className={getPriorityColor(selectedTicket.priority)}>
+                      {selectedTicket.priority}
+                    </Badge>
+                  </DialogTitle>
+                  <DialogDescription>
+                    View and manage ticket details, billing, and repair progress.
+                  </DialogDescription>
+                </div>
                 <div className="flex space-x-2">
                   <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogTrigger asChild>

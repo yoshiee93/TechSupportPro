@@ -1221,7 +1221,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markItemsAsBilled(itemIds: number[]): Promise<void> {
-    const invoiceId = Date.now(); // Generate mock invoice ID
+    const invoiceId = Math.floor(Math.random() * 2147483647); // Generate smaller invoice ID
     await db.update(billableItems)
       .set({ invoiceId })
       .where(inArray(billableItems.id, itemIds));
@@ -1250,8 +1250,8 @@ export class DatabaseStorage implements IStorage {
     const taxAmount = subtotal * 0.1; // 10% tax
     const totalAmount = subtotal + taxAmount;
 
-    // Create a mock invoice ID (in real implementation, this would create an actual invoice record)
-    const invoiceId = Date.now();
+    // Generate a smaller invoice ID that fits in PostgreSQL integer range
+    const invoiceId = Math.floor(Math.random() * 2147483647);
 
     // Mark items as billed by setting invoice ID
     await db.update(billableItems)
