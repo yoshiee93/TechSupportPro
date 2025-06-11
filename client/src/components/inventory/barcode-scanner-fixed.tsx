@@ -39,10 +39,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       setIsMobile(checkMobile);
       console.log('Mobile detection:', { checkMobile, userAgent: navigator.userAgent });
       
-      // Slight delay to ensure proper cleanup
+      // Longer delay to ensure complete browser camera state reset
       setTimeout(() => {
         enumerateCameras();
-      }, 100);
+      }, 500);
     }
 
     return () => {
@@ -58,28 +58,51 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     try {
       console.log('Starting camera enumeration (fresh session)...');
       
-      // Force fresh permission request to ensure all cameras are visible
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
+      // Samsung phone fix: Multiple permission requests to reset camera state
+      try {
+        // First request with basic constraints
+        const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        basicStream.getTracks().forEach(track => track.stop());
+        
+        // Second request with environment facing
+        const envStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" }
+        });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        envStream.getTracks().forEach(track => track.stop());
+        
+        console.log('Multiple camera permissions granted for Samsung compatibility');
+      } catch (permErr) {
+        console.log('Samsung permission workaround failed, using standard approach:', permErr);
+        
+        // Fallback to standard permission request
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+        stream.getTracks().forEach(track => track.stop());
+      }
       
-      // Keep stream alive briefly to ensure all devices are detected
-      await new Promise(resolve => setTimeout(resolve, 200));
-      stream.getTracks().forEach(track => track.stop());
-      console.log('Camera permission granted and stream released for enumeration');
+      console.log('Camera permissions complete, enumerating devices...');
       
-      // Multiple enumeration attempts to ensure consistent detection
+      // Multiple enumeration attempts with longer delays for Samsung phones
       let devices = await navigator.mediaDevices.enumerateDevices();
       let videoDevices = devices.filter(device => device.kind === 'videoinput');
       
-      // If we get fewer than expected cameras, try again after a brief delay
-      if (videoDevices.length < 3) {
-        console.log('First enumeration found only', videoDevices.length, 'cameras, retrying...');
-        await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('First enumeration attempt:', videoDevices.length, 'cameras');
+      
+      // Samsung phones often need multiple attempts with delays
+      let attempts = 0;
+      while (videoDevices.length < 4 && attempts < 3) {
+        attempts++;
+        console.log(`Enumeration attempt ${attempts + 1}, found ${videoDevices.length} cameras, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 500 * attempts)); // Progressive delay
         devices = await navigator.mediaDevices.enumerateDevices();
         videoDevices = devices.filter(device => device.kind === 'videoinput');
       }
@@ -449,14 +472,31 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   const handleClose = () => {
     stopScanning();
+    
+    // Force complete reset of camera state when closing
+    setAvailableCameras([]);
+    setSelectedCameraId('');
+    setHasPermission(null);
+    setError(null);
+    setIsScanning(false);
+    
+    // Reset the code reader
+    if (codeReader.current) {
+      codeReader.current.reset();
+      codeReader.current = null;
+    }
+    
     onClose();
   };
 
   useEffect(() => {
     if (!isOpen) {
+      // Additional cleanup when dialog is closed
       stopScanning();
       setError(null);
       setHasPermission(null);
+      setAvailableCameras([]);
+      setSelectedCameraId('');
     }
   }, [isOpen]);
 
