@@ -25,6 +25,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   useEffect(() => {
     if (isOpen) {
+      // Reset all state when opening
+      setAvailableCameras([]);
+      setSelectedCameraId('');
+      setHasPermission(null);
+      setError(null);
+      setIsScanning(false);
+      
       codeReader.current = new BrowserMultiFormatReader();
       console.log('BrowserMultiFormatReader initialized');
       
@@ -32,7 +39,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       setIsMobile(checkMobile);
       console.log('Mobile detection:', { checkMobile, userAgent: navigator.userAgent });
       
-      enumerateCameras();
+      // Slight delay to ensure proper cleanup
+      setTimeout(() => {
+        enumerateCameras();
+      }, 100);
     }
 
     return () => {
@@ -46,14 +56,33 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   const enumerateCameras = async () => {
     try {
-      console.log('Starting camera enumeration...');
+      console.log('Starting camera enumeration (fresh session)...');
       
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Force fresh permission request to ensure all cameras are visible
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      // Keep stream alive briefly to ensure all devices are detected
+      await new Promise(resolve => setTimeout(resolve, 200));
       stream.getTracks().forEach(track => track.stop());
-      console.log('Camera permission granted for enumeration');
+      console.log('Camera permission granted and stream released for enumeration');
       
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      // Multiple enumeration attempts to ensure consistent detection
+      let devices = await navigator.mediaDevices.enumerateDevices();
+      let videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      // If we get fewer than expected cameras, try again after a brief delay
+      if (videoDevices.length < 3) {
+        console.log('First enumeration found only', videoDevices.length, 'cameras, retrying...');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(device => device.kind === 'videoinput');
+      }
       
       console.log('All video devices found:', videoDevices.map((d, index) => ({
         index: index + 1,
@@ -62,7 +91,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         groupId: d.groupId
       })));
       
+      // Always use all video devices to ensure consistent camera list
       let cameraList = videoDevices;
+      
+      // For mobile, still filter for rear cameras but keep all as fallback
       if (isMobile) {
         const rearCameras = videoDevices.filter(device => {
           const label = device.label.toLowerCase();
@@ -76,7 +108,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           label: d.label
         })));
         
-        cameraList = rearCameras.length > 0 ? rearCameras : videoDevices;
+        // Only use rear cameras if we have enough, otherwise use all
+        if (rearCameras.length >= 3) {
+          cameraList = rearCameras;
+        } else {
+          console.log('Using all cameras since rear camera filter reduced count too much');
+          cameraList = videoDevices;
+        }
       }
       
       console.log('Final camera list with indexes:', cameraList.map((d, index) => ({
@@ -104,7 +142,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       
     } catch (err) {
       console.error('Camera enumeration failed:', err);
+      // More robust fallback
       try {
+        await new Promise(resolve => setTimeout(resolve, 500));
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
         console.log('Fallback camera enumeration:', videoDevices.length, 'cameras found');
