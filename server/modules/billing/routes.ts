@@ -101,20 +101,22 @@ router.get("/sales/:id", requireAuth, async (req, res) => {
 // Create new sale with items
 router.post("/sales", requireAuth, async (req, res) => {
   try {
-    const schema = z.object({
-      transaction: insertSalesTransactionSchema,
+    // Validate request data without user ID first
+    const baseSchema = z.object({
+      transaction: insertSalesTransactionSchema.omit({ createdByUserId: true }),
       items: z.array(insertSaleItemSchema.omit({ transactionId: true }))
     });
     
-    const { transaction: transactionData, items: itemsData } = schema.parse(req.body);
+    const { transaction: baseTransactionData, items: itemsData } = baseSchema.parse(req.body);
     
-    // Create transaction - use authenticated user ID
+    // Add authenticated user ID
     const userId = req.user?.id || '6b7d97fb-ed95-4f00-bfa3-6a6db20888b3';
-    
-    const transaction = await storage.createSalesTransaction({
-      ...transactionData,
+    const transactionData = {
+      ...baseTransactionData,
       createdByUserId: userId
-    });
+    };
+    
+    const transaction = await storage.createSalesTransaction(transactionData);
     
     // Create sale items
     const items = [];
