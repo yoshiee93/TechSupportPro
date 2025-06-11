@@ -15,7 +15,9 @@ import {
   Wrench,
   Shield,
   Warehouse,
-  X
+  X,
+  ShoppingCart,
+  Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,21 +40,25 @@ export default function MobileNavigation({ onClose }: MobileNavigationProps) {
       badge: stats?.activeTickets || 0 
     },
     { 
+      name: "Sales", 
+      href: "/sales", 
+      icon: ShoppingCart 
+    },
+    { 
+      name: "Inventory", 
+      href: "/inventory", 
+      icon: Warehouse 
+    },
+    { 
       name: "Clients", 
       href: "/clients", 
       icon: Users, 
       badge: clients.length || 0 
     },
     { 
-      name: "Parts & Orders", 
-      href: "/parts", 
-      icon: Package, 
-      badge: stats?.pendingParts || 0 
-    },
-    { 
-      name: "Inventory", 
-      href: "/inventory", 
-      icon: Warehouse 
+      name: "Billing", 
+      href: "/billing", 
+      icon: Receipt 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },

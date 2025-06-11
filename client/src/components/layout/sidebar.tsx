@@ -34,26 +34,25 @@ export default function Sidebar() {
       badge: stats?.activeTickets || 0 
     },
     { 
-      name: "Clients", 
-      href: "/clients", 
-      icon: Users, 
-      badge: clients.length || 0 
+      name: "Sales", 
+      href: "/sales", 
+      icon: ShoppingCart 
     },
-
     { 
       name: "Inventory", 
       href: "/inventory", 
       icon: Warehouse 
     },
     { 
+      name: "Clients", 
+      href: "/clients", 
+      icon: Users, 
+      badge: clients.length || 0 
+    },
+    { 
       name: "Billing", 
       href: "/billing", 
       icon: Receipt 
-    },
-    { 
-      name: "Sales", 
-      href: "/sales", 
-      icon: ShoppingCart 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },
