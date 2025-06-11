@@ -109,9 +109,14 @@ router.post("/sales", requireAuth, async (req, res) => {
     const { transaction: transactionData, items: itemsData } = schema.parse(req.body);
     
     // Create transaction
+    console.log('User from request:', req.user);
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const transaction = await storage.createSalesTransaction({
       ...transactionData,
-      createdByUserId: req.user?.id || ''
+      createdByUserId: req.user.id
     });
     
     // Create sale items
