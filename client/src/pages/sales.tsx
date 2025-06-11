@@ -557,6 +557,12 @@ export default function SalesPage() {
                   type="submit" 
                   className="w-full" 
                   disabled={saleItems.length === 0 || createSaleMutation.isPending}
+                  onClick={() => {
+                    console.log('Button clicked!');
+                    console.log('Form errors:', form.formState.errors);
+                    console.log('Form values:', form.getValues());
+                    console.log('Sale items:', saleItems);
+                  }}
                 >
                   Complete Sale
                 </Button>
