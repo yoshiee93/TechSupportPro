@@ -15,6 +15,7 @@ import Devices from "@/pages/devices";
 import Inventory from "@/pages/inventory";
 import Billing from "@/pages/billing";
 import Sales from "@/pages/sales";
+import Invoices from "@/pages/invoices";
 import AIInsights from "@/pages/ai-insights";
 import Admin from "@/pages/admin";
 import Sidebar from "@/components/layout/sidebar";
@@ -37,6 +38,7 @@ function AuthenticatedApp() {
             <Route path="/inventory" component={Inventory} />
             <Route path="/billing" component={Billing} />
             <Route path="/sales" component={Sales} />
+            <Route path="/invoices" component={Invoices} />
             <Route path="/ai-insights" component={AIInsights} />
             <Route path="/admin" component={Admin} />
             <Route component={NotFound} />
