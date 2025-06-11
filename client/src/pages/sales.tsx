@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import BarcodeScanner from '@/components/inventory/barcode-scanner-fixed';
+import BarcodeScanner from '@/components/inventory/barcode-scanner-working';
 import { ShoppingCart, Scan, Plus, Trash2, Package, AlertTriangle } from 'lucide-react';
 
 const saleItemSchema = z.object({

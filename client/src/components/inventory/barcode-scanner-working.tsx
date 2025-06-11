@@ -37,11 +37,11 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const cleanup = () => {
     if (codeReader.current) {
       try {
-        codeReader.current.stopAsyncDecode();
+        // The ZXing library doesn't have stopAsyncDecode, just set to null
+        codeReader.current = null;
       } catch (e) {
         // Ignore cleanup errors
       }
-      codeReader.current = null;
     }
     
     if (currentStream.current) {
@@ -146,7 +146,8 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const stopScanning = () => {
     if (codeReader.current) {
       try {
-        codeReader.current.stopAsyncDecode();
+        // Clean up the code reader properly - no stopAsyncDecode method exists
+        codeReader.current = null;
       } catch (e) {
         // Ignore errors
       }
