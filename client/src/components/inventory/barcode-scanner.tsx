@@ -44,10 +44,48 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...');
       
-      // Try basic video access first
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true 
-      });
+      let stream;
+      
+      // Try main camera lens first (1x zoom for better focus)
+      try {
+        console.log('Trying main camera lens with 1x zoom...');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            zoom: { ideal: 1.0, min: 1.0 }
+          } as any
+        });
+        console.log('Main camera lens acquired successfully');
+      } catch (mainCameraErr) {
+        console.log('Main camera failed, trying telephoto lens...', mainCameraErr);
+        
+        // Try telephoto lens (2x zoom) for better close-up focus
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              zoom: { ideal: 2.0 }
+            } as any
+          });
+          console.log('Telephoto lens acquired successfully');
+        } catch (telephotoErr) {
+          console.log('Telephoto failed, using basic environment camera...', telephotoErr);
+          
+          // Fallback to basic rear camera
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+          console.log('Basic rear camera acquired');
+        }
+      }
       
       setHasPermission(true);
       setError(null);
@@ -112,9 +150,8 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         }
       }
       
-      // Method 2: Restart camera stream for Samsung phones
-      console.log('Attempting camera stream restart for focus...');
-      const currentConstraints = videoTrack.getConstraints();
+      // Method 2: Restart camera with better lens selection
+      console.log('Attempting camera stream restart with lens optimization...');
       
       // Stop current track
       videoTrack.stop();
@@ -122,13 +159,27 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Wait briefly
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Request new stream with same constraints
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...currentConstraints,
-          facingMode: "environment"
-        }
-      });
+      // Try to get main camera lens (1x zoom) for better focus
+      let newStream;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            zoom: { ideal: 1.0 }
+          } as any
+        });
+        console.log('Restarted with main camera lens');
+      } catch (err) {
+        // Fallback to basic camera
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment"
+          }
+        });
+        console.log('Restarted with basic camera');
+      }
       
       // Replace video source
       if (videoRef.current) {
