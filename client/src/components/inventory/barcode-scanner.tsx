@@ -80,7 +80,7 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   };
 
   const triggerFocus = async () => {
-    console.log('Focus button clicked');
+    console.log('Focus button clicked - attempting Samsung-compatible focus');
     
     if (!videoRef.current || !videoRef.current.srcObject) {
       console.log('No video stream available for focusing');
@@ -96,38 +96,60 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     }
 
     try {
-      // Stop and restart the video track to trigger refocus
-      const settings = videoTrack.getSettings();
-      console.log('Current video settings:', settings);
+      // Method 1: Try torch toggle (works on many Samsung phones)
+      const capabilities = videoTrack.getCapabilities();
+      console.log('Camera capabilities:', capabilities);
       
-      // Apply new constraints to force camera refocus
-      await videoTrack.applyConstraints({
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        focusMode: "single-shot"
-      } as any);
+      if ('torch' in capabilities) {
+        try {
+          await videoTrack.applyConstraints({ torch: true } as any);
+          await new Promise(resolve => setTimeout(resolve, 200));
+          await videoTrack.applyConstraints({ torch: false } as any);
+          console.log('Torch focus method applied');
+          return;
+        } catch (torchErr) {
+          console.log('Torch method failed:', torchErr);
+        }
+      }
       
-      console.log('Focus constraints applied successfully');
+      // Method 2: Restart camera stream for Samsung phones
+      console.log('Attempting camera stream restart for focus...');
+      const currentConstraints = videoTrack.getConstraints();
       
-      // Also try triggering a focus event on the video element
+      // Stop current track
+      videoTrack.stop();
+      
+      // Wait briefly
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Request new stream with same constraints
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          ...currentConstraints,
+          facingMode: "environment"
+        }
+      });
+      
+      // Replace video source
       if (videoRef.current) {
-        videoRef.current.focus();
-        console.log('Video element focused');
+        videoRef.current.srcObject = newStream;
+        await videoRef.current.play();
+        console.log('Camera stream restarted successfully for focus');
       }
       
     } catch (err) {
-      console.log('Focus operation failed, trying alternative method:', err);
+      console.log('All focus methods failed:', err);
       
-      // Alternative: briefly pause and resume video
+      // Fallback: Just try to restart video element
       try {
         if (videoRef.current) {
           videoRef.current.pause();
           await new Promise(resolve => setTimeout(resolve, 100));
-          videoRef.current.play();
-          console.log('Video restarted for focus');
+          await videoRef.current.play();
+          console.log('Video element restarted as fallback');
         }
-      } catch (restartErr) {
-        console.log('Video restart failed:', restartErr);
+      } catch (fallbackErr) {
+        console.log('Fallback focus failed:', fallbackErr);
       }
     }
   };
@@ -333,7 +355,7 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                   onClick={triggerFocus} 
                   variant="outline" 
                   size="sm"
-                  title="Tap to refocus camera"
+                  title="Tap to refocus camera (optimized for Samsung phones)"
                 >
                   <Camera className="w-4 h-4 mr-1" />
                   Focus
@@ -346,6 +368,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                   <X className="w-4 h-4 mr-1" />
                   Stop
                 </Button>
+              </div>
+              <div className="text-xs text-gray-500 text-center">
+                Samsung phones: Focus button restarts camera for better detection
               </div>
             </div>
           )}

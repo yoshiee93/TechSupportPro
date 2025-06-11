@@ -1,0 +1,118 @@
+client:536 WebSocket connection to 'wss://5edc8f47-a7ce-4f51-a4f7-210b2c3554d7-00-4eknq6xno0wb.spock.replit.dev/?token=Qey7DJLXh7RA' failed: 
+setupWebSocket @ client:536Understand this error
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=Qey7DJLXh7RA' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this error
+chunk-RPCDYKBN.js?v=5b768646:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+api/auth/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335Understand this warning
+barcode-scanner.tsx:26 BrowserMultiFormatReader initialized
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335Understand this warning
+barcode-scanner.tsx:136 Start scanning button clicked
+barcode-scanner.tsx:158 Scanner components ready: Object
+barcode-scanner.tsx:164 Requesting camera permission...
+barcode-scanner.tsx:45 Attempting to request camera permission...
+barcode-scanner.tsx:54 Camera permission granted successfully
+barcode-scanner.tsx:173 Starting barcode scanning...
+@zxing_library.js?v=5b768646:2809 Trying to play video that is already playing.
+(anonymous) @ @zxing_library.js?v=5b768646:2809Understand this warning
+barcode-scanner.tsx:216 Barcode scanner started successfully - camera will auto-focus for better detection
+barcode-scanner.tsx:83 Focus button clicked
+barcode-scanner.tsx:101 Current video settings: Object
+barcode-scanner.tsx:119 Focus operation failed, trying alternative method: OverconstrainedError: Mixing ImageCapture and non-ImageCapture constraints is not currently supported
+barcode-scanner.tsx:127 Video restarted for focus
+barcode-scanner.tsx:83 Focus button clicked
+barcode-scanner.tsx:101 Current video settings: Object
+barcode-scanner.tsx:119 Focus operation failed, trying alternative method: OverconstrainedError: Mixing ImageCapture and non-ImageCapture constraints is not currently supported
+barcode-scanner.tsx:127 Video restarted for focus
+barcode-scanner.tsx:206 Scanner actively looking for barcodes...
+4barcode-scanner.tsx:206 Scanner actively looking for barcodes...
+barcode-scanner.tsx:83 Focus button clicked
+barcode-scanner.tsx:101 Current video settings: {aspectRatio: 1.3333333333333333, brightness: 128, colorTemperature: 4600, contrast: 32, deviceId: '9a4f766273c7e1ef2ee353e856b735c9045b94e7453406f08e07d76ac9f3d04d', …}
+barcode-scanner.tsx:119 Focus operation failed, trying alternative method: OverconstrainedError: Mixing ImageCapture and non-ImageCapture constraints is not currently supported
+barcode-scanner.tsx:127 Video restarted for focus
+3barcode-scanner.tsx:206 Scanner actively looking for barcodes...
+barcode-scanner.tsx:182 Barcode detected successfully: {text: '9329747001202', format: 7, length: 13, rawBytes: Array(13), trimmed: '9329747001202', …}
+barcode-scanner.tsx:193 Sending cleaned barcode to parent: 9329747001202
+barcode-scanner.tsx:31 Cleaning up barcode scanner
+barcode-scanner.tsx:26 BrowserMultiFormatReader initialized
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=5b768646:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=5b768646:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=5b768646:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=5b768646:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=5b768646:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=5b768646:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=5b768646:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=5b768646:19416
+commitRoot @ chunk-RPCDYKBN.js?v=5b768646:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=5b768646:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=5b768646:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=5b768646:18627Understand this warning
+barcode-scanner.tsx:136 Start scanning button clicked
+barcode-scanner.tsx:158 Scanner components ready: {hasCodeReader: true, hasVideoRef: true}
+barcode-scanner.tsx:164 Requesting camera permission...
+barcode-scanner.tsx:45 Attempting to request camera permission...
+barcode-scanner.tsx:54 Camera permission granted successfully
+barcode-scanner.tsx:173 Starting barcode scanning...
+@zxing_library.js?v=5b768646:2809 Trying to play video that is already playing.
+(anonymous) @ @zxing_library.js?v=5b768646:2809
+step @ @zxing_library.js?v=5b768646:2447
+(anonymous) @ @zxing_library.js?v=5b768646:2399
+(anonymous) @ @zxing_library.js?v=5b768646:2386
+__awaiter @ @zxing_library.js?v=5b768646:2368
+BrowserCodeReader2.tryPlayVideo @ @zxing_library.js?v=5b768646:2803
+videoCanPlayListener @ @zxing_library.js?v=5b768646:2792Understand this warning
+barcode-scanner.tsx:216 Barcode scanner started successfully - camera will auto-focus for better detection
+barcode-scanner.tsx:83 Focus button clicked
+barcode-scanner.tsx:101 Current video settings: {aspectRatio: 1.3333333333333333, brightness: 128, colorTemperature: 4600, contrast: 32, deviceId: '9a4f766273c7e1ef2ee353e856b735c9045b94e7453406f08e07d76ac9f3d04d', …}
+barcode-scanner.tsx:119 Focus operation failed, trying alternative method: OverconstrainedError: Mixing ImageCapture and non-ImageCapture constraints is not currently supported
+barcode-scanner.tsx:127 Video restarted for focus
+barcode-scanner.tsx:182 Barcode detected successfully: {text: '9329747001202', format: 7, length: 13, rawBytes: Array(13), trimmed: '9329747001202', …}
+barcode-scanner.tsx:193 Sending cleaned barcode to parent: 9329747001202
+barcode-scanner.tsx:31 Cleaning up barcode scanner
+barcode-scanner.tsx:26 BrowserMultiFormatReader initialized
+chunk-IUL3XNTS.js?v=5b768646:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-IUL3XNTS.js?v=5b768646:335
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=5b768646:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=5b768646:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=5b768646:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=5b768646:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=5b768646:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=5b768646:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=5b768646:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=5b768646:19416
+commitRoot @ chunk-RPCDYKBN.js?v=5b768646:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=5b768646:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=5b768646:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=5b768646:18627Understand this warning
+barcode-scanner.tsx:136 Start scanning button clicked
+barcode-scanner.tsx:158 Scanner components ready: {hasCodeReader: true, hasVideoRef: true}
+barcode-scanner.tsx:164 Requesting camera permission...
+barcode-scanner.tsx:45 Attempting to request camera permission...
+barcode-scanner.tsx:54 Camera permission granted successfully
+barcode-scanner.tsx:173 Starting barcode scanning...
+@zxing_library.js?v=5b768646:2809 Trying to play video that is already playing.
+(anonymous) @ @zxing_library.js?v=5b768646:2809
+step @ @zxing_library.js?v=5b768646:2447
+(anonymous) @ @zxing_library.js?v=5b768646:2399
+(anonymous) @ @zxing_library.js?v=5b768646:2386
+__awaiter @ @zxing_library.js?v=5b768646:2368
+BrowserCodeReader2.tryPlayVideo @ @zxing_library.js?v=5b768646:2803
+videoCanPlayListener @ @zxing_library.js?v=5b768646:2792Understand this warning
+barcode-scanner.tsx:216 Barcode scanner started successfully - camera will auto-focus for better detection
+barcode-scanner.tsx:83 Focus button clicked
+barcode-scanner.tsx:101 Current video settings: {aspectRatio: 1.3333333333333333, brightness: 128, colorTemperature: 4600, contrast: 32, deviceId: '9a4f766273c7e1ef2ee353e856b735c9045b94e7453406f08e07d76ac9f3d04d', …}
+barcode-scanner.tsx:119 Focus operation failed, trying alternative method: OverconstrainedError: Mixing ImageCapture and non-ImageCapture constraints is not currently supported
+barcode-scanner.tsx:127 Video restarted for focus
+barcode-scanner.tsx:206 Scanner actively looking for barcodes...
+barcode-scanner.tsx:182 Barcode detected successfully: {text: '9329747001202', format: 7, length: 13, rawBytes: Array(13), trimmed: '9329747001202', …}
+barcode-scanner.tsx:193 Sending cleaned barcode to parent: 9329747001202
+barcode-scanner.tsx:31 Cleaning up barcode scanner
