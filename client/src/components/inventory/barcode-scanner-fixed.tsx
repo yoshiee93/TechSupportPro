@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect } from "react";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, X, Scan, Smartphone } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { BrowserMultiFormatReader } from '@zxing/browser';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Camera, X, RotateCcw } from 'lucide-react';
 
 interface BarcodeScannerProps {
   isOpen: boolean;
@@ -35,13 +34,11 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       setIsScanning(false);
       
       codeReader.current = new BrowserMultiFormatReader();
-      console.log('BrowserMultiFormatReader initialized');
       
       const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       setIsMobile(checkMobile);
-      console.log('Mobile detection:', { checkMobile, userAgent: navigator.userAgent });
       
-      // Longer delay to ensure complete browser camera state reset
+      // Delay to ensure complete browser camera state reset
       setTimeout(() => {
         enumerateCameras();
       }, 500);
@@ -49,25 +46,39 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
     return () => {
       if (codeReader.current) {
-        console.log('Cleaning up barcode scanner');
         codeReader.current.reset();
         codeReader.current = null;
       }
     };
   }, [isOpen]);
 
+  const forceCleanupAllCameraStreams = async () => {
+    // Stop all active streams
+    activeStreams.current.forEach(stream => {
+      stream.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
+    });
+    activeStreams.current = [];
+    
+    // Force browser to release camera resources
+    try {
+      const dummyStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1, height: 1 } });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      dummyStream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      // Silent fail for cleanup
+    }
+  };
+
   const enumerateCameras = async () => {
     try {
-      console.log('Starting camera enumeration (fresh session)...');
-      
-      // Samsung phone fix: Complete camera state reset with stream tracking
-      console.log('Camera refresh key:', cameraRefreshKey);
-      
-      // Step 1: Force camera resource cleanup
+      // Force camera resource cleanup
       await forceCleanupAllCameraStreams();
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Step 2: Multiple permission requests to reset Samsung camera state
+      // Multiple permission requests to reset Samsung camera state
       const streams: MediaStream[] = [];
       
       try {
@@ -86,11 +97,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
             activeStreams.current.push(stream);
             await new Promise(resolve => setTimeout(resolve, 150));
           } catch (err) {
-            console.log('Permission request failed for constraint:', constraint, err);
+            // Silently continue if constraint fails
           }
         }
-        
-        console.log('Multiple camera permissions granted, found', streams.length, 'streams');
         
         // Clean up all streams
         streams.forEach(stream => {
@@ -99,8 +108,6 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         activeStreams.current = [];
         
       } catch (permErr) {
-        console.log('Samsung multiple permission workaround failed:', permErr);
-        
         // Fallback to standard single permission request
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -116,40 +123,27 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           stream.getTracks().forEach(track => track.stop());
           activeStreams.current = [];
         } catch (fallbackErr) {
-          console.error('All permission requests failed:', fallbackErr);
           throw fallbackErr;
         }
       }
       
-      console.log('Camera permissions complete, enumerating devices...');
-      
-      // Multiple enumeration attempts with longer delays for Samsung phones
+      // Multiple enumeration attempts for Samsung phones
       let devices = await navigator.mediaDevices.enumerateDevices();
       let videoDevices = devices.filter(device => device.kind === 'videoinput');
-      
-      console.log('First enumeration attempt:', videoDevices.length, 'cameras');
       
       // Samsung phones often need multiple attempts with delays
       let attempts = 0;
       while (videoDevices.length < 4 && attempts < 3) {
         attempts++;
-        console.log(`Enumeration attempt ${attempts + 1}, found ${videoDevices.length} cameras, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 500 * attempts)); // Progressive delay
+        await new Promise(resolve => setTimeout(resolve, 500 * attempts));
         devices = await navigator.mediaDevices.enumerateDevices();
         videoDevices = devices.filter(device => device.kind === 'videoinput');
       }
       
-      console.log('All video devices found:', videoDevices.map((d, index) => ({
-        index: index + 1,
-        deviceId: d.deviceId,
-        label: d.label,
-        groupId: d.groupId
-      })));
-      
       // Always use all video devices to ensure consistent camera list
       let cameraList = videoDevices;
       
-      // For mobile, still filter for rear cameras but keep all as fallback
+      // For mobile, filter for rear cameras but keep all as fallback
       if (isMobile) {
         const rearCameras = videoDevices.filter(device => {
           const label = device.label.toLowerCase();
@@ -157,27 +151,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                  (!label.includes('front') && !label.includes('user') && !label.includes('facing'));
         });
         
-        console.log('Rear cameras found:', rearCameras.map((d, index) => ({
-          index: index + 1,
-          deviceId: d.deviceId,
-          label: d.label
-        })));
-        
         // Only use rear cameras if we have enough, otherwise use all
         if (rearCameras.length >= 3) {
           cameraList = rearCameras;
         } else {
-          console.log('Using all cameras since rear camera filter reduced count too much');
           cameraList = videoDevices;
         }
       }
-      
-      console.log('Final camera list with indexes:', cameraList.map((d, index) => ({
-        index: index + 1,
-        deviceId: d.deviceId,
-        label: d.label,
-        displayName: getCameraDisplayName(d, index)
-      })));
       
       setAvailableCameras(cameraList);
       
@@ -185,10 +165,8 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       let selectedCamera;
       if (cameraList.length >= 4) {
         selectedCamera = cameraList[3]; // 4th camera (0-indexed)
-        console.log('Auto-selected 4th camera (preferred for Samsung):', selectedCamera.label);
       } else if (cameraList.length > 0) {
         selectedCamera = cameraList[0]; // First camera as fallback
-        console.log('Auto-selected first camera:', selectedCamera.label);
       }
       
       if (selectedCamera) {
@@ -196,302 +174,140 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       }
       
     } catch (err) {
-      console.error('Camera enumeration failed:', err);
       // More robust fallback
       try {
         await new Promise(resolve => setTimeout(resolve, 500));
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        console.log('Fallback camera enumeration:', videoDevices.length, 'cameras found');
         setAvailableCameras(videoDevices);
         if (videoDevices.length > 0) {
           setSelectedCameraId(videoDevices[0].deviceId);
         }
       } catch (fallbackErr) {
-        console.error('Fallback enumeration also failed:', fallbackErr);
+        setError('Camera access failed. Please check permissions.');
       }
     }
   };
 
   const getCameraDisplayName = (device: MediaDeviceInfo, index?: number) => {
     const label = device.label.toLowerCase();
-    const cameraNumber = index !== undefined ? `Camera ${index + 1}: ` : '';
-    const isPreferred = index === 3 ? ' ⭐' : ''; // Star for 4th camera
+    const deviceIndex = index !== undefined ? index : availableCameras.findIndex(cam => cam.deviceId === device.deviceId);
+    const displayIndex = deviceIndex + 1;
     
+    // Star indicator for 4th camera (Samsung preferred)
+    const starIndicator = displayIndex === 4 ? ' ⭐' : '';
+    
+    if (label.includes('back') || label.includes('rear')) {
+      return `Camera ${displayIndex} (Rear)${starIndicator}`;
+    }
+    if (label.includes('front') || label.includes('user')) {
+      return `Camera ${displayIndex} (Front)${starIndicator}`;
+    }
     if (label.includes('ultra') || label.includes('wide')) {
-      return `${cameraNumber}📐 Ultra Wide${isPreferred}`;
-    } else if (label.includes('telephoto') || label.includes('tele') || label.includes('zoom')) {
-      return `${cameraNumber}🔍 Telephoto${isPreferred}`;
-    } else if (label.includes('macro')) {
-      return `${cameraNumber}🔬 Macro${isPreferred}`;
-    } else {
-      return `${cameraNumber}📷 Main Camera${isPreferred}`;
+      return `Camera ${displayIndex} (Ultra Wide)${starIndicator}`;
+    }
+    if (label.includes('telephoto') || label.includes('zoom')) {
+      return `Camera ${displayIndex} (Telephoto)${starIndicator}`;
+    }
+    if (label.includes('macro')) {
+      return `Camera ${displayIndex} (Macro)${starIndicator}`;
+    }
+    
+    return `Camera ${displayIndex}${starIndicator}`;
+  };
+
+  const requestCameraPermission = async () => {
+    try {
+      setHasPermission(null);
+      setError(null);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      // Stop the stream immediately - we just needed permission
+      stream.getTracks().forEach(track => track.stop());
+      
+      setHasPermission(true);
+      
+      // Re-enumerate cameras after permission granted
+      await enumerateCameras();
+      
+    } catch (err) {
+      setHasPermission(false);
+      setError('Camera permission denied. Please allow camera access.');
     }
   };
 
-  const requestCameraPermission = async (cameraId?: string) => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported by this browser');
-      }
+  const startScanning = async () => {
+    if (!selectedCameraId || !codeReader.current || !videoRef.current) {
+      setError('Please select a camera first.');
+      return;
+    }
 
-      console.log('Attempting to request camera permission...', cameraId ? `for camera: ${cameraId}` : 'default');
-      
-      const videoConstraints: MediaTrackConstraints = {
-        width: { ideal: 1920, max: 1920 },
-        height: { ideal: 1080, max: 1080 },
-        facingMode: "environment"
-      };
-      
-      if (cameraId) {
-        videoConstraints.deviceId = { ideal: cameraId };
-        delete videoConstraints.facingMode;
-      }
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: videoConstraints 
-      });
-      
-      setHasPermission(true);
+    if (isScanning) {
+      setSelectedCameraId(selectedCameraId);
+      return;
+    }
+
+    try {
       setError(null);
-      console.log('Camera permission granted successfully');
+      setIsScanning(true);
+
+      if (codeReader.current) {
+        codeReader.current.reset();
+      }
       
-      stream.getTracks().forEach(track => track.stop());
+      codeReader.current = new BrowserMultiFormatReader();
       
-      return true;
+      await codeReader.current.decodeFromVideoDevice(
+        selectedCameraId,
+        videoRef.current,
+        (result, error) => {
+          if (result) {
+            setIsScanning(false);
+            onScan(result.getText());
+            onClose();
+          }
+        }
+      );
+
     } catch (err) {
-      console.error('Camera permission error:', err);
-      
-      if (cameraId && err instanceof Error && (err.name === 'OverconstrainedError' || err.name === 'NotReadableError')) {
-        console.log('Trying fallback constraints for Samsung camera...');
-        try {
-          const fallbackConstraints: MediaTrackConstraints = {
-            deviceId: { exact: cameraId },
-            width: { min: 640, ideal: 1280 },
-            height: { min: 480, ideal: 720 }
-          };
-          
-          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: fallbackConstraints });
-          fallbackStream.getTracks().forEach(track => track.stop());
-          
-          setHasPermission(true);
-          setError(null);
-          console.log('Samsung camera fallback successful');
-          return true;
-          
-        } catch (fallbackErr) {
-          console.error('Samsung camera fallback failed:', fallbackErr);
-        }
-      }
-      
-      setHasPermission(false);
-      
-      let errorMessage = 'Camera access denied';
-      if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') {
-          errorMessage = 'Camera access denied. Please click the camera icon in your browser address bar and allow camera access.';
-        } else if (err.name === 'NotFoundError') {
-          errorMessage = 'No camera found. Please ensure your device has a camera.';
-        } else if (err.name === 'NotSupportedError') {
-          errorMessage = 'Camera not supported by this browser.';
-        } else if (err.name === 'OverconstrainedError') {
-          errorMessage = 'Selected camera not available. Try switching to a different camera.';
-        } else if (err.name === 'NotReadableError') {
-          errorMessage = 'Camera is being used by another application. Please close other camera apps and try again.';
-        } else {
-          errorMessage = `Camera error: ${err.message}`;
-        }
-      }
-      
-      setError(errorMessage);
-      return false;
+      setIsScanning(false);
+      setError('Failed to start camera. Please try a different camera.');
     }
   };
 
   const switchCamera = async (newCameraId: string) => {
-    if (!isScanning) {
-      setSelectedCameraId(newCameraId);
-      return;
-    }
+    if (!codeReader.current || !videoRef.current) return;
 
-    console.log('Switching camera during scanning to:', newCameraId);
-    
-    if (codeReader.current) {
-      codeReader.current.reset();
-    }
-    
-    setSelectedCameraId(newCameraId);
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
     try {
-      if (!codeReader.current) {
-        codeReader.current = new BrowserMultiFormatReader();
+      setError(null);
+      
+      if (codeReader.current) {
+        codeReader.current.reset();
       }
+      
+      codeReader.current = new BrowserMultiFormatReader();
       
       await codeReader.current.decodeFromVideoDevice(
         newCameraId,
         videoRef.current,
         (result, error) => {
           if (result) {
-            const scannedText = result.getText();
-            console.log('Barcode detected with new camera:', scannedText);
-            onScan(scannedText.trim());
-            stopScanning();
+            setIsScanning(false);
+            onScan(result.getText());
             onClose();
-          }
-          if (error && !(error instanceof NotFoundException)) {
-            console.error("Scanning error:", error);
           }
         }
       );
-      
-      console.log('Camera switched successfully');
+
     } catch (err) {
-      console.error('Camera switch failed:', err);
-      
-      try {
-        console.log('Attempting fallback to default camera...');
-        if (codeReader.current) {
-          codeReader.current.reset();
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          await codeReader.current.decodeFromVideoDevice(
-            null,
-            videoRef.current,
-            (result, error) => {
-              if (result) {
-                console.log('Barcode detected with fallback camera:', result.getText());
-                onScan(result.getText().trim());
-                stopScanning();
-                onClose();
-              }
-            }
-          );
-          console.log('Fallback camera started successfully');
-        }
-      } catch (fallbackErr) {
-        console.error('Fallback camera also failed:', fallbackErr);
-        setError('Camera switch failed. Please restart the scanner.');
-        setIsScanning(false);
-      }
-    }
-  };
-
-  const startScanning = async () => {
-    console.log('Start scanning button clicked');
-    
-    if (!codeReader.current) {
-      codeReader.current = new BrowserMultiFormatReader();
-    }
-    
-    if (!videoRef.current) {
-      console.error('Video element not available');
-      setError('Video element not ready. Please try again.');
-      return;
-    }
-
-    setIsScanning(true);
-    setError(null);
-
-    console.log('Scanner components ready:', {
-      hasCodeReader: !!codeReader.current,
-      hasVideoRef: !!videoRef.current 
-    });
-
-    try {
-      console.log('Requesting camera permission...');
-
-      const hasCamera = await requestCameraPermission(selectedCameraId);
-      if (!hasCamera) {
-        console.log('Camera permission denied');
-        setIsScanning(false);
-        return;
-      }
-
-      console.log('Starting barcode scanning...');
-      
-      const cameraId = selectedCameraId || null;
-      
-      try {
-        await codeReader.current.decodeFromVideoDevice(
-          cameraId,
-          videoRef.current,
-          (result, error) => {
-            if (result) {
-              const scannedText = result.getText();
-              console.log('Barcode detected successfully:', {
-                text: scannedText,
-                format: result.getBarcodeFormat(),
-                length: scannedText.length,
-                timestamp: new Date().toISOString()
-              });
-              
-              const cleanText = scannedText.trim();
-              console.log('Sending cleaned barcode to parent:', cleanText);
-              onScan(cleanText);
-              stopScanning();
-              onClose();
-            }
-            
-            if (error && !(error instanceof NotFoundException)) {
-              console.error("Scanning error:", error);
-            }
-            
-            if (!result && Math.random() < 0.01) {
-              console.log('Scanner actively looking for barcodes...');
-            }
-          }
-        );
-        
-        console.log('Barcode scanner started successfully');
-        setIsScanning(true);
-        setError(null);
-        
-      } catch (scanErr) {
-        console.error('Primary scanning failed:', scanErr);
-        
-        if (cameraId && scanErr instanceof Error && 
-            (scanErr.name === 'NotReadableError' || scanErr.name === 'OverconstrainedError')) {
-          console.log('Attempting Samsung camera fallback...');
-          try {
-            codeReader.current.reset();
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            await codeReader.current.decodeFromVideoDevice(
-              null,
-              videoRef.current,
-              (result, error) => {
-                if (result) {
-                  const scannedText = result.getText();
-                  console.log('Barcode detected with fallback:', scannedText);
-                  onScan(scannedText.trim());
-                  stopScanning();
-                  onClose();
-                }
-                if (error && !(error instanceof NotFoundException)) {
-                  console.error("Fallback scanning error:", error);
-                }
-              }
-            );
-            
-            console.log('Fallback scanner started successfully');
-            setIsScanning(true);
-            setError(null);
-            return;
-            
-          } catch (fallbackErr) {
-            console.error('Fallback also failed:', fallbackErr);
-          }
-        }
-        
-        const errorMessage = scanErr instanceof Error ? scanErr.message : String(scanErr);
-        setError(`Failed to start camera: ${errorMessage}`);
-        setIsScanning(false);
-      }
-    } catch (err) {
-      console.error("Scanner initialization failed:", err);
-      setError('Scanner initialization failed. Please refresh and try again.');
-      setIsScanning(false);
+      setError('Failed to switch camera. Please try again.');
     }
   };
 
@@ -500,26 +316,6 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       codeReader.current.reset();
     }
     setIsScanning(false);
-  };
-
-  const forceCleanupAllCameraStreams = async () => {
-    // Stop all active streams
-    activeStreams.current.forEach(stream => {
-      stream.getTracks().forEach(track => {
-        track.stop();
-        track.enabled = false;
-      });
-    });
-    activeStreams.current = [];
-    
-    // Force browser to release camera resources
-    try {
-      const dummyStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1, height: 1 } });
-      await new Promise(resolve => setTimeout(resolve, 100));
-      dummyStream.getTracks().forEach(track => track.stop());
-    } catch (err) {
-      console.log('Camera cleanup dummy stream failed:', err);
-    }
   };
 
   const handleClose = () => {
@@ -563,130 +359,113 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Scan className="w-5 h-5" />
+            <Camera className="w-5 h-5" />
             {title}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {!isScanning && !error && (
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Camera className="w-8 h-8 text-gray-400" />
-                </div>
-              </div>
-              
-              {availableCameras.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-                    <Smartphone className="w-4 h-4" />
-                    {availableCameras.length > 1 ? 'Multiple cameras detected' : 'Camera available'}
-                  </div>
-                  <div className="text-xs text-center text-gray-500">
-                    Found {availableCameras.length} camera(s) {availableCameras.length >= 4 ? '(Camera 4 auto-selected ⭐)' : ''}
-                  </div>
-                  <Select value={selectedCameraId} onValueChange={setSelectedCameraId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select camera" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCameras.map((camera, index) => (
-                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                          {getCameraDisplayName(camera, index)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="text-xs text-gray-500">
-                    💡 Ultra-wide for large items, telephoto for small/distant barcodes
-                  </div>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">
-                  Click start to begin scanning barcodes with your camera
-                </p>
-                <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-                  ⚠️ Make sure to allow camera access when prompted by your browser
-                </div>
-              </div>
-              <Button onClick={startScanning} className="w-full">
+          {hasPermission === null && (
+            <div className="text-center py-4">
+              <Button onClick={requestCameraPermission} className="w-full">
                 <Camera className="w-4 h-4 mr-2" />
-                Start Camera
+                Request Camera Permission
               </Button>
             </div>
           )}
 
-          {isScanning && (
-            <div className="space-y-4">
-              <div className="relative">
+          {hasPermission === false && (
+            <div className="text-center py-4 text-red-600">
+              Camera permission denied. Please allow camera access in your browser settings.
+            </div>
+          )}
+
+          {hasPermission === true && availableCameras.length === 0 && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p>Loading cameras...</p>
+            </div>
+          )}
+
+          {hasPermission === true && availableCameras.length > 0 && (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Camera</label>
+                <Select
+                  value={selectedCameraId}
+                  onValueChange={(value) => {
+                    setSelectedCameraId(value);
+                    if (isScanning) {
+                      switchCamera(value);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a camera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCameras.map((camera, index) => (
+                      <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                        {getCameraDisplayName(camera, index)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
                 <video
                   ref={videoRef}
-                  className="w-full h-64 bg-black rounded-lg object-cover"
-                  autoPlay
+                  className="w-full h-full object-cover"
                   playsInline
                   muted
                 />
+                {!isScanning && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                    <div className="text-white text-center">
+                      <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Press Start to begin scanning</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                {!isScanning ? (
+                  <Button 
+                    onClick={startScanning} 
+                    className="flex-1"
+                    disabled={!selectedCameraId}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Start Scanning
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={stopScanning} 
+                    variant="destructive" 
+                    className="flex-1"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Stop Scanning
+                  </Button>
+                )}
                 
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-32 border-2 border-blue-500 rounded-lg relative">
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-blue-500"></div>
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-blue-500"></div>
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-blue-500"></div>
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-blue-500"></div>
-                  </div>
-                </div>
-              </div>
-              
-              {availableCameras.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs text-center text-gray-600">
-                    {availableCameras.length > 1 ? 'Switch Camera:' : 'Current Camera:'}
-                  </div>
-                  <Select value={selectedCameraId} onValueChange={switchCamera}>
-                    <SelectTrigger className="w-full h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCameras.map((camera, index) => (
-                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                          {getCameraDisplayName(camera, index)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600">
-                  Position the barcode within the frame to scan
-                </p>
-                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                  💡 Tips: Hold steady, ensure good lighting, try different distances from camera
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-2">
                 <Button 
-                  onClick={stopScanning} 
-                  variant="outline" 
-                  size="sm"
+                  onClick={enumerateCameras} 
+                  variant="outline"
+                  size="icon"
+                  title="Refresh cameras"
                 >
-                  <X className="w-4 h-4 mr-1" />
-                  Stop Scanner
+                  <RotateCcw className="w-4 h-4" />
                 </Button>
               </div>
+            </>
+          )}
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
         </div>
