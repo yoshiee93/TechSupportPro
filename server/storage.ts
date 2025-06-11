@@ -1190,7 +1190,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(tickets, eq(billableItems.ticketId, tickets.id))
       .leftJoin(clients, eq(tickets.clientId, clients.id))
       .leftJoin(devices, eq(tickets.deviceId, devices.id))
-      .where(eq(billableItems.billingStatus, 'pending'))
+      .where(sql`${billableItems.invoiceId} IS NULL`)
       .orderBy(desc(billableItems.createdAt));
     
     return result.map(row => ({
@@ -1221,11 +1221,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markItemsAsBilled(itemIds: number[]): Promise<void> {
+    const invoiceId = Date.now(); // Generate mock invoice ID
     await db.update(billableItems)
-      .set({ 
-        billingStatus: 'billed',
-        billedDate: new Date()
-      })
+      .set({ invoiceId })
       .where(inArray(billableItems.id, itemIds));
   }
 
@@ -1241,28 +1239,28 @@ export class DatabaseStorage implements IStorage {
     // Get all unbilled items for this ticket
     const items = await db.select()
       .from(billableItems)
-      .where(and(eq(billableItems.ticketId, ticketId), eq(billableItems.billingStatus, 'pending')));
+      .where(and(eq(billableItems.ticketId, ticketId), sql`invoice_id IS NULL`));
     
     if (items.length === 0) {
       throw new Error('No unbilled items found for this ticket');
     }
 
     // Calculate totals
-    const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalAmount || '0'), 0);
+    const subtotal = items.reduce((sum, item) => sum + parseFloat(item.lineTotal || '0'), 0);
     const taxAmount = subtotal * 0.1; // 10% tax
     const totalAmount = subtotal + taxAmount;
 
-    // Mark items as billed
-    await db.update(billableItems)
-      .set({ 
-        billingStatus: 'billed', 
-        billedDate: new Date() 
-      })
-      .where(and(eq(billableItems.ticketId, ticketId), eq(billableItems.billingStatus, 'pending')));
+    // Create a mock invoice ID (in real implementation, this would create an actual invoice record)
+    const invoiceId = Date.now();
 
-    // Return invoice data (in real implementation, this would create an actual invoice record)
+    // Mark items as billed by setting invoice ID
+    await db.update(billableItems)
+      .set({ invoiceId })
+      .where(and(eq(billableItems.ticketId, ticketId), sql`invoice_id IS NULL`));
+
+    // Return invoice data
     return {
-      invoiceNumber: `INV-${ticketId}-${Date.now()}`,
+      invoiceNumber: `INV-${ticketId}-${invoiceId}`,
       ticketId,
       items,
       subtotal,
