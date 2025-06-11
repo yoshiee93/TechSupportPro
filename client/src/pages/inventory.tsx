@@ -25,7 +25,7 @@ import {
   Trash2,
   Scan
 } from "lucide-react";
-import BarcodeScanner from "@/components/inventory/barcode-scanner";
+import BarcodeScanner from "@/components/inventory/barcode-scanner-fixed";
 
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
