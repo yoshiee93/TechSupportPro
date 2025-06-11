@@ -14,7 +14,9 @@ import {
   Settings,
   Wrench,
   Shield,
-  Warehouse
+  Warehouse,
+  Receipt,
+  ShoppingCart
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -47,6 +49,16 @@ export default function Sidebar() {
       name: "Inventory", 
       href: "/inventory", 
       icon: Warehouse 
+    },
+    { 
+      name: "Billing", 
+      href: "/billing", 
+      icon: Receipt 
+    },
+    { 
+      name: "Sales", 
+      href: "/sales", 
+      icon: ShoppingCart 
     },
     { name: "Admin", href: "/admin", icon: Shield },
     { name: "Reports", href: "/reports", icon: BarChart3 },
