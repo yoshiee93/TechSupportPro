@@ -150,15 +150,19 @@ export default function SalesPage() {
       lineTotal: lineTotal.toFixed(2),
     };
 
+    let updatedItems;
     if (editingItemIndex !== null) {
-      const updatedItems = [...saleItems];
+      updatedItems = [...saleItems];
       updatedItems[editingItemIndex] = newItem;
       setSaleItems(updatedItems);
       setEditingItemIndex(null);
     } else {
-      setSaleItems([...saleItems, newItem]);
+      updatedItems = [...saleItems, newItem];
+      setSaleItems(updatedItems);
     }
 
+    // Update the form's items field
+    form.setValue('items', updatedItems);
     itemForm.reset();
   };
 
@@ -169,7 +173,10 @@ export default function SalesPage() {
   };
 
   const removeSaleItem = (index: number) => {
-    setSaleItems(saleItems.filter((_, i) => i !== index));
+    const updatedItems = saleItems.filter((_, i) => i !== index);
+    setSaleItems(updatedItems);
+    form.setValue('items', updatedItems);
+    
     if (editingItemIndex === index) {
       setEditingItemIndex(null);
       itemForm.reset();
