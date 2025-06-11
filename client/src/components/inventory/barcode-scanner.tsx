@@ -37,45 +37,91 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   const requestCameraPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: "environment", // Use rear camera if available
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
-        } 
-      });
+      // First try with preferred settings
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 }
+          } 
+        });
+      } catch (err) {
+        // Fallback to basic video only
+        console.log('Preferred camera settings failed, trying basic settings:', err);
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true 
+        });
+      }
+      
       setHasPermission(true);
       setError(null);
+      console.log('Camera permission granted successfully');
       
       // Stop the stream immediately - we'll start a new one for scanning
       stream.getTracks().forEach(track => track.stop());
       
       return true;
     } catch (err) {
+      console.error('Camera permission error:', err);
       setHasPermission(false);
-      setError("Camera access denied. Please allow camera access to scan barcodes.");
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Camera access denied. Please allow camera access in your browser settings. Error: ${errorMessage}`);
       return false;
     }
   };
 
   const triggerFocus = async () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      const videoTrack = stream.getVideoTracks()[0];
+    console.log('Focus button clicked');
+    
+    if (!videoRef.current || !videoRef.current.srcObject) {
+      console.log('No video stream available for focusing');
+      return;
+    }
+
+    const stream = videoRef.current.srcObject as MediaStream;
+    const videoTrack = stream.getVideoTracks()[0];
+    
+    if (!videoTrack) {
+      console.log('No video track available');
+      return;
+    }
+
+    try {
+      // Stop and restart the video track to trigger refocus
+      const settings = videoTrack.getSettings();
+      console.log('Current video settings:', settings);
       
-      if (videoTrack && videoTrack.getCapabilities) {
-        try {
-          // Try to trigger autofocus by reapplying constraints
-          await videoTrack.applyConstraints({
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: "environment"
-          });
-          console.log('Manual focus triggered via constraint reapplication');
-        } catch (err) {
-          console.log('Focus constraint failed:', err);
+      // Apply new constraints to force camera refocus
+      await videoTrack.applyConstraints({
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        focusMode: "single-shot"
+      } as any);
+      
+      console.log('Focus constraints applied successfully');
+      
+      // Also try triggering a focus event on the video element
+      if (videoRef.current) {
+        videoRef.current.focus();
+        console.log('Video element focused');
+      }
+      
+    } catch (err) {
+      console.log('Focus operation failed, trying alternative method:', err);
+      
+      // Alternative: briefly pause and resume video
+      try {
+        if (videoRef.current) {
+          videoRef.current.pause();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          videoRef.current.play();
+          console.log('Video restarted for focus');
         }
+      } catch (restartErr) {
+        console.log('Video restart failed:', restartErr);
       }
     }
   };
