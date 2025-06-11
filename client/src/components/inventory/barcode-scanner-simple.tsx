@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { X, Camera, AlertCircle } from 'lucide-react';
@@ -13,14 +14,19 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan Barcode" }: BarcodeScannerProps) {
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      initializeCameras();
+    } else {
       cleanup();
     }
     return cleanup;
@@ -31,38 +37,112 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    if (codeReaderRef.current) {
+      codeReaderRef.current = null;
+    }
     setIsScanning(false);
     setError(null);
   };
 
+  const initializeCameras = async () => {
+    try {
+      setError(null);
+      
+      // Request initial permission
+      const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      testStream.getTracks().forEach(track => track.stop());
+
+      // Get available cameras
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => 
+        device.kind === 'videoinput' && device.deviceId
+      );
+      
+      if (videoDevices.length === 0) {
+        setError('No cameras found on this device.');
+        return;
+      }
+
+      setCameras(videoDevices);
+      
+      // Auto-select the best camera (prefer back/environment camera)
+      const backCamera = videoDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
+      );
+      
+      const selectedCamera = backCamera || videoDevices[videoDevices.length - 1] || videoDevices[0];
+      setSelectedCameraId(selectedCamera.deviceId);
+      
+    } catch (err: any) {
+      setError(`Camera initialization failed: ${err?.message || 'Unknown error'}. Please allow camera access.`);
+    }
+  };
+
   const startScanning = async () => {
-    if (isScanning) return;
+    if (isScanning || !selectedCameraId) return;
 
     try {
       setError(null);
       setIsScanning(true);
 
-      // Request camera access
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
-      });
-      
+      // Stop any existing streams
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      // Advanced camera constraints for better barcode scanning
+      const constraints = {
+        video: {
+          deviceId: { exact: selectedCameraId },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          focusMode: "continuous",
+          exposureMode: "continuous",
+          whiteBalanceMode: "continuous",
+          zoom: true
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // Apply video track settings for better focus
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack && videoTrack.getCapabilities) {
+          try {
+            const capabilities = videoTrack.getCapabilities() as any;
+            const settings: any = {};
+            
+            // Enable auto-focus if available
+            if (capabilities.focusMode && capabilities.focusMode.includes && capabilities.focusMode.includes('continuous')) {
+              settings.focusMode = 'continuous';
+            }
+            
+            // Set zoom if available (for better close-up scanning)
+            if (capabilities.zoom && capabilities.zoom.max) {
+              settings.zoom = Math.min(capabilities.zoom.max, 2); // 2x zoom
+            }
+            
+            if (Object.keys(settings).length > 0) {
+              await videoTrack.applyConstraints({ advanced: [settings] });
+            }
+          } catch (e) {
+            // Camera settings not supported, continue without them
+          }
+        }
       }
 
       // Initialize barcode reader
-      const codeReader = new BrowserMultiFormatReader();
+      codeReaderRef.current = new BrowserMultiFormatReader();
       
-      // Start scanning
-      codeReader.decodeFromVideoDevice(
-        undefined, // Use default camera
+      // Start scanning with selected camera
+      await codeReaderRef.current.decodeFromVideoDevice(
+        selectedCameraId,
         videoRef.current!,
         (result) => {
           if (result) {
@@ -74,8 +154,15 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       );
 
     } catch (err: any) {
-      setError(`Camera access failed: ${err?.message || 'Unknown error'}. Please allow camera access.`);
+      setError(`Camera failed to start: ${err?.message || 'Unknown error'}. Try selecting a different camera.`);
       setIsScanning(false);
+    }
+  };
+
+  const handleCameraChange = (cameraId: string) => {
+    setSelectedCameraId(cameraId);
+    if (isScanning) {
+      cleanup();
     }
   };
 
@@ -112,6 +199,24 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
             </Alert>
           )}
 
+          {cameras.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Camera:</label>
+              <Select value={selectedCameraId} onValueChange={handleCameraChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a camera" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cameras.map((camera, index) => (
+                    <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                      {camera.label || `Camera ${index + 1}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
             <video
               ref={videoRef}
@@ -141,7 +246,11 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
           <div className="flex gap-2">
             {!isScanning ? (
-              <Button onClick={startScanning} className="flex-1">
+              <Button 
+                onClick={startScanning} 
+                disabled={!selectedCameraId || cameras.length === 0}
+                className="flex-1"
+              >
                 <Camera className="w-4 h-4 mr-2" />
                 Start Scanning
               </Button>
