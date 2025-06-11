@@ -37,24 +37,17 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   const requestCameraPermission = async () => {
     try {
-      // First try with preferred settings
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30 }
-          } 
-        });
-      } catch (err) {
-        // Fallback to basic video only
-        console.log('Preferred camera settings failed, trying basic settings:', err);
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: true 
-        });
+      // Check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported by this browser');
       }
+
+      console.log('Attempting to request camera permission...');
+      
+      // Try basic video access first
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true 
+      });
       
       setHasPermission(true);
       setError(null);
@@ -67,8 +60,21 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     } catch (err) {
       console.error('Camera permission error:', err);
       setHasPermission(false);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Camera access denied. Please allow camera access in your browser settings. Error: ${errorMessage}`);
+      
+      let errorMessage = 'Camera access denied';
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = 'Camera access denied. Please click the camera icon in your browser address bar and allow camera access.';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'No camera found. Please ensure your device has a camera.';
+        } else if (err.name === 'NotSupportedError') {
+          errorMessage = 'Camera not supported by this browser.';
+        } else {
+          errorMessage = `Camera error: ${err.message}`;
+        }
+      }
+      
+      setError(errorMessage);
       return false;
     }
   };
@@ -250,6 +256,22 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
+              <div className="mt-3 space-y-2">
+                <Button 
+                  onClick={() => {
+                    setError(null);
+                    setHasPermission(null);
+                  }} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                >
+                  Try Again
+                </Button>
+                <div className="text-xs text-gray-500">
+                  If camera access keeps failing, check browser settings or try refreshing the page
+                </div>
+              </div>
             </Alert>
           )}
 
@@ -260,9 +282,14 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                   <Camera className="w-8 h-8 text-gray-400" />
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
-                Click start to begin scanning barcodes with your camera
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Click start to begin scanning barcodes with your camera
+                </p>
+                <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                  ⚠️ Make sure to allow camera access when prompted by your browser
+                </div>
+              </div>
               <Button onClick={startScanning} className="w-full">
                 <Camera className="w-4 h-4 mr-2" />
                 Start Camera
