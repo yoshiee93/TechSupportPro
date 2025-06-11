@@ -6,6 +6,7 @@ import { useDashboardStats } from "@/hooks/use-tickets";
 import { useReminders } from "@/hooks/use-parts";
 import { useTickets } from "@/hooks/use-tickets";
 import { usePartsOrders } from "@/hooks/use-parts";
+import MobileDashboard from "@/components/mobile/mobile-dashboard";
 import { format } from "date-fns";
 import { 
   TicketIcon, 
@@ -79,7 +80,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-3 sm:p-6">
+    <>
+      {/* Mobile Dashboard */}
+      <div className="md:hidden p-4">
+        <MobileDashboard />
+      </div>
+
+      {/* Desktop Dashboard */}
+      <div className="hidden md:block p-3 sm:p-6">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -306,6 +314,7 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
