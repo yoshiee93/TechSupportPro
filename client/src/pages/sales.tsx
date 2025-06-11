@@ -76,8 +76,10 @@ export default function SalesPage() {
 
   // Create sales transaction mutation
   const createSaleMutation = useMutation({
-    mutationFn: (data: any) => 
-      apiRequest('POST', '/api/sales', data),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/sales', data);
+      return response.json();
+    },
     onSuccess: (data: any) => {
       console.log('Sale success response:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
@@ -96,7 +98,8 @@ export default function SalesPage() {
       setSaleItems([]);
       setEditingItemIndex(null);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Sale error:', error);
       toast({
         title: "Error",
         description: "Failed to complete sale",

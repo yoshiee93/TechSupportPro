@@ -102,11 +102,8 @@ router.get("/sales/:id", requireAuth, async (req, res) => {
 router.post("/sales", requireAuth, async (req, res) => {
   try {
     const { transaction: baseTransactionData, items: itemsData } = req.body;
-    console.log('Received data:', { baseTransactionData, itemsData });
-    
     // Create transaction with authenticated user ID
     const userId = req.user?.id || '6b7d97fb-ed95-4f00-bfa3-6a6db20888b3';
-    console.log('Using user ID:', userId);
     
     const transactionData = {
       clientId: baseTransactionData.clientId,
@@ -117,15 +114,12 @@ router.post("/sales", requireAuth, async (req, res) => {
       notes: baseTransactionData.notes || null,
       createdByUserId: userId
     };
-    console.log('Final transaction data:', transactionData);
     
     const transaction = await storage.createSalesTransaction(transactionData);
-    console.log('Created transaction:', transaction);
     
-    // Create sale items
+    // Create sale items and update inventory
     const items = [];
     for (const itemData of itemsData) {
-      console.log('Creating sale item:', itemData);
       const item = await storage.createSaleItem({
         transactionId: transaction.id,
         partId: itemData.partId || null,
@@ -137,10 +131,8 @@ router.post("/sales", requireAuth, async (req, res) => {
         lineTotal: itemData.lineTotal
       });
       items.push(item);
-      console.log('Created sale item:', item);
     }
     
-    console.log('Sales transaction complete, returning response...');
     res.json({ transaction, items });
   } catch (error) {
     console.error("Error creating sales transaction:", error);
