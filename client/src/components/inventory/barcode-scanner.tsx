@@ -44,47 +44,54 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...');
       
+      // Get available camera devices to select the best one
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('Available camera devices:', videoDevices.map(d => ({ label: d.label, deviceId: d.deviceId })));
+      
       let stream;
       
-      // Try main camera lens first (1x zoom for better focus)
-      try {
-        console.log('Trying main camera lens with 1x zoom...');
-        stream = await navigator.mediaDevices.getUserMedia({ 
+      // Try to find the main rear camera (usually has "back" or "rear" in label, or is the first environment camera)
+      const rearCameras = videoDevices.filter(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('main') ||
+        device.label.toLowerCase().includes('camera 0')
+      );
+      
+      if (rearCameras.length > 0) {
+        // Try each rear camera device, preferring main camera over wide-angle
+        for (const camera of rearCameras) {
+          try {
+            console.log(`Trying camera: ${camera.label} (${camera.deviceId})`);
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                deviceId: { exact: camera.deviceId },
+                width: { ideal: 1920, min: 1280 },
+                height: { ideal: 1080, min: 720 },
+                focusMode: "continuous"
+              } as any
+            });
+            console.log(`Successfully using camera: ${camera.label}`);
+            break;
+          } catch (deviceErr) {
+            console.log(`Camera ${camera.label} failed:`, deviceErr);
+            continue;
+          }
+        }
+      }
+      
+      // If no specific device worked, try basic environment camera
+      if (!stream) {
+        console.log('Falling back to basic environment camera...');
+        stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: "environment",
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-            zoom: { ideal: 1.0, min: 1.0 }
-          } as any
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         });
-        console.log('Main camera lens acquired successfully');
-      } catch (mainCameraErr) {
-        console.log('Main camera failed, trying telephoto lens...', mainCameraErr);
-        
-        // Try telephoto lens (2x zoom) for better close-up focus
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-              zoom: { ideal: 2.0 }
-            } as any
-          });
-          console.log('Telephoto lens acquired successfully');
-        } catch (telephotoErr) {
-          console.log('Telephoto failed, using basic environment camera...', telephotoErr);
-          
-          // Fallback to basic rear camera
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            }
-          });
-          console.log('Basic rear camera acquired');
-        }
+        console.log('Using basic environment camera');
       }
       
       setHasPermission(true);
