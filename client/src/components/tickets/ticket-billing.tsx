@@ -33,7 +33,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
 
   // Fetch billable items for this ticket
   const { data: billableItems = [], isLoading: loadingItems } = useQuery<any[]>({
-    queryKey: ['/api/billable-items/ticket', ticketId],
+    queryKey: [`/api/billable-items/ticket/${ticketId}`],
   });
 
   // Fetch available parts
@@ -48,7 +48,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/billable-items/ticket', ticketId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/billable-items/ticket/${ticketId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/billable-items/unbilled'] });
       setIsAddItemOpen(false);
       resetForm();
@@ -73,7 +73,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
       return response.json();
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/billable-items/ticket', ticketId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/billable-items/ticket/${ticketId}`] });
       toast({
         title: "Success",
         description: `Invoice #${data.invoice.invoiceNumber} generated successfully`,
@@ -95,7 +95,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/billable-items/ticket', ticketId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/billable-items/ticket/${ticketId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/billable-items/unbilled'] });
       toast({
         title: "Success",
@@ -150,8 +150,8 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
         itemType: 'part',
         description: selectedPart?.name || description,
         quantity: parseFloat(quantity),
-        unitPrice: customPrice ? parseFloat(customPrice) : selectedPart?.price || 0,
-        lineTotal: (customPrice ? parseFloat(customPrice) : selectedPart?.price || 0) * parseFloat(quantity),
+        unitPrice: customPrice ? parseFloat(customPrice) : selectedPart?.sellingPrice || 0,
+        lineTotal: (customPrice ? parseFloat(customPrice) : selectedPart?.sellingPrice || 0) * parseFloat(quantity),
       };
     } else {
       itemData = {
@@ -217,7 +217,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
                         <SelectContent>
                           {(parts as any[]).map((part: any) => (
                             <SelectItem key={part.id} value={part.id.toString()}>
-                              {part.name} - ${part.price} (Stock: {part.quantity})
+                              {part.name} - ${part.sellingPrice} (Stock: {part.quantityOnHand})
                             </SelectItem>
                           ))}
                         </SelectContent>
