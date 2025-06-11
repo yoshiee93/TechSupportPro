@@ -9,6 +9,7 @@ import { registerOrderingRoutes } from "./modules/ordering/routes";
 import { registerAttachmentRoutes } from "./modules/attachments/routes";
 import { registerBillingRoutes } from "./modules/billing/routes";
 import aiRoutes from "./modules/ai/routes";
+import timeTrackingRoutes from "./modules/time-tracking/routes";
 import { errorHandler } from "./shared/middleware/error-handler";
 import { setupWebSocket } from "./websocket";
 
@@ -27,6 +28,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI routes
   app.use("/api/ai", aiRoutes);
+  
+  // Time tracking routes
+  app.use("/api/time-tracking", timeTrackingRoutes);
 
   // Error handling middleware (must be last)
   app.use(errorHandler);
