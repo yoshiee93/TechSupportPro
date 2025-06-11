@@ -309,16 +309,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     await new Promise(resolve => setTimeout(resolve, 200));
     
     try {
-      // Start with new camera using Samsung-compatible constraints
+      // Start with new camera
       if (!codeReader.current) {
         codeReader.current = new BrowserMultiFormatReader();
       }
-      
-      // For Samsung phones, we need to specify constraints more carefully
-      const hints = new Map();
-      hints.set('deviceId', newCameraId);
-      hints.set('width', 1920);
-      hints.set('height', 1080);
       
       await codeReader.current.decodeFromVideoDevice(
         newCameraId,
@@ -326,28 +320,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         (result, error) => {
           if (result) {
             const scannedText = result.getText();
-            console.log('Barcode detected successfully:', {
-              text: scannedText,
-              format: result.getBarcodeFormat(),
-              length: scannedText.length,
-              rawBytes: Array.from(scannedText).map(c => c.charCodeAt(0)),
-              trimmed: scannedText.trim(),
-              timestamp: new Date().toISOString()
-            });
-            
-            const cleanText = scannedText.trim();
-            console.log('Sending cleaned barcode to parent:', cleanText);
-            onScan(cleanText);
+            console.log('Barcode detected with new camera:', scannedText);
+            onScan(scannedText.trim());
             stopScanning();
             onClose();
           }
-          
           if (error && !(error instanceof NotFoundException)) {
             console.error("Scanning error:", error);
-          }
-          
-          if (!result && Math.random() < 0.01) {
-            console.log('Scanner actively looking for barcodes...');
           }
         }
       );
@@ -355,8 +334,31 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       console.log('Camera switched successfully');
     } catch (err) {
       console.error('Camera switch failed:', err);
-      setError('Failed to switch camera. Please try again.');
-      setIsScanning(false);
+      
+      // Try fallback to default camera for Samsung phones
+      try {
+        console.log('Attempting fallback to default camera...');
+        codeReader.current.reset();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        await codeReader.current.decodeFromVideoDevice(
+          null,
+          videoRef.current,
+          (result, error) => {
+            if (result) {
+              console.log('Barcode detected with fallback camera:', result.getText());
+              onScan(result.getText().trim());
+              stopScanning();
+              onClose();
+            }
+          }
+        );
+        console.log('Fallback camera started successfully');
+      } catch (fallbackErr) {
+        console.error('Fallback camera also failed:', fallbackErr);
+        setError('Camera switch failed. Please restart the scanner.');
+        setIsScanning(false);
+      }
     }
   };
 
