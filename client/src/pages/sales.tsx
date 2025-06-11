@@ -284,7 +284,7 @@ export default function SalesPage() {
                       <FormLabel>Select Product</FormLabel>
                       <Select 
                         onValueChange={(value) => {
-                          const partId = value ? parseInt(value) : null;
+                          const partId = value === "manual" ? null : parseInt(value);
                           field.onChange(partId);
                           
                           if (partId) {
@@ -293,9 +293,13 @@ export default function SalesPage() {
                               itemForm.setValue('description', part.name);
                               itemForm.setValue('unitPrice', part.sellingPrice || part.unitCost || '0.00');
                             }
+                          } else if (value === "manual") {
+                            // Clear fields for manual entry
+                            itemForm.setValue('description', '');
+                            itemForm.setValue('unitPrice', '0.00');
                           }
                         }}
-                        value={field.value?.toString() || ''}
+                        value={field.value ? field.value.toString() : 'manual'}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -303,7 +307,7 @@ export default function SalesPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Manual Entry</SelectItem>
+                          <SelectItem value="manual">Manual Entry</SelectItem>
                           {parts.map((part: any) => (
                             <SelectItem key={part.id} value={part.id.toString()}>
                               {part.name} - ${part.sellingPrice || part.unitCost || '0.00'}
