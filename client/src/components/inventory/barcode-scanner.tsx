@@ -44,65 +44,53 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...');
       
-      let stream;
-      
-      // Try progressive camera configurations for Samsung optimization
-      const cameraConfigs = [
-        {
-          name: "High resolution with manual focus",
-          config: {
-            facingMode: "environment",
-            width: { exact: 1920 },
-            height: { exact: 1080 },
-            focusMode: "manual",
-            focusDistance: { ideal: 0.1 }
-          }
-        },
-        {
-          name: "Medium resolution with continuous focus",
-          config: {
-            facingMode: "environment", 
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            focusMode: "continuous"
-          }
-        },
-        {
-          name: "Standard environment camera",
-          config: {
-            facingMode: "environment"
-          }
-        }
-      ];
-      
-      for (const cameraConfig of cameraConfigs) {
-        try {
-          console.log(`Trying ${cameraConfig.name}...`);
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: cameraConfig.config as any
-          });
-          console.log(`Successfully acquired: ${cameraConfig.name}`);
-          
-          // Log the actual settings we got
-          const track = stream.getVideoTracks()[0];
-          if (track) {
-            const settings = track.getSettings();
-            console.log('Camera settings:', {
-              width: settings.width,
-              height: settings.height,
-              focusMode: (settings as any).focusMode,
-              facingMode: settings.facingMode
-            });
-          }
-          break;
-        } catch (err) {
-          console.log(`${cameraConfig.name} failed:`, err);
-          continue;
-        }
+      // Get device list first
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('Available cameras:', videoDevices.map(d => ({ label: d.label, deviceId: d.deviceId })));
+
+      // Try to find a rear camera (without "exact" constraint)
+      let rearCamera = videoDevices.find(d => 
+        d.label.toLowerCase().includes('back') || 
+        d.label.toLowerCase().includes('rear') ||
+        d.label.toLowerCase().includes('main')
+      );
+
+      // Fallback to first available camera
+      if (!rearCamera && videoDevices.length > 0) {
+        rearCamera = videoDevices[0];
       }
-      
-      if (!stream) {
-        throw new Error('No camera configuration worked');
+
+      // Get basic camera stream first
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: rearCamera ? { deviceId: rearCamera.deviceId } : { facingMode: "environment" }
+      });
+
+      console.log(`Using camera: ${rearCamera?.label || 'default environment camera'}`);
+
+      // Now try to apply zoom after getting the stream
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = track.getCapabilities();
+        const settings = track.getSettings();
+        
+        console.log('Camera capabilities:', capabilities);
+        console.log('Current settings:', settings);
+
+        // Try to apply 2x zoom if supported (better than 0.6x wide-angle)
+        if ('zoom' in capabilities && capabilities.zoom) {
+          try {
+            const targetZoom = Math.min(capabilities.zoom.max || 2.0, 2.0);
+            await track.applyConstraints({ 
+              advanced: [{ zoom: targetZoom }] 
+            });
+            console.log(`Applied ${targetZoom}x zoom successfully`);
+          } catch (zoomErr) {
+            console.log('Zoom constraint failed:', zoomErr);
+          }
+        } else {
+          console.log('Zoom not supported on this camera');
+        }
       }
       
       setHasPermission(true);
