@@ -101,36 +101,47 @@ router.get("/sales/:id", requireAuth, async (req, res) => {
 // Create new sale with items
 router.post("/sales", requireAuth, async (req, res) => {
   try {
-    // Validate request data without user ID first
-    const baseSchema = z.object({
-      transaction: insertSalesTransactionSchema.omit({ createdByUserId: true }),
-      items: z.array(insertSaleItemSchema.omit({ transactionId: true }))
-    });
+    const { transaction: baseTransactionData, items: itemsData } = req.body;
+    console.log('Received data:', { baseTransactionData, itemsData });
     
-    const { transaction: baseTransactionData, items: itemsData } = baseSchema.parse(req.body);
-    
-    // Add authenticated user ID
+    // Create transaction with authenticated user ID
     const userId = req.user?.id || '6b7d97fb-ed95-4f00-bfa3-6a6db20888b3';
+    console.log('Using user ID:', userId);
+    
     const transactionData = {
-      ...baseTransactionData,
+      clientId: baseTransactionData.clientId,
+      subtotal: baseTransactionData.subtotal,
+      taxAmount: baseTransactionData.taxAmount,
+      totalAmount: baseTransactionData.totalAmount,
+      paymentStatus: 'pending',
+      notes: baseTransactionData.notes || null,
       createdByUserId: userId
     };
+    console.log('Final transaction data:', transactionData);
     
     const transaction = await storage.createSalesTransaction(transactionData);
+    console.log('Created transaction:', transaction);
     
     // Create sale items
     const items = [];
     for (const itemData of itemsData) {
+      console.log('Creating sale item:', itemData);
       const item = await storage.createSaleItem({
-        ...itemData,
-        transactionId: transaction.id
+        transactionId: transaction.id,
+        partId: itemData.partId || null,
+        description: itemData.description,
+        quantity: itemData.quantity,
+        unitPrice: itemData.unitPrice,
+        taxRate: itemData.taxRate,
+        taxInclusive: itemData.taxInclusive,
+        lineTotal: itemData.lineTotal
       });
       items.push(item);
+      console.log('Created sale item:', item);
     }
     
-    // Get complete transaction with relations
-    const completeTransaction = await storage.getSalesTransaction(transaction.id);
-    res.json(completeTransaction);
+    console.log('Sales transaction complete, returning response...');
+    res.json({ transaction, items });
   } catch (error) {
     console.error("Error creating sales transaction:", error);
     res.status(500).json({ error: "Failed to create sales transaction" });

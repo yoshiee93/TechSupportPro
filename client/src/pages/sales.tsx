@@ -78,11 +78,12 @@ export default function SalesPage() {
   const createSaleMutation = useMutation({
     mutationFn: (data: any) => 
       apiRequest('POST', '/api/sales', data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory/parts'] });
       toast({
-        title: "Success",
-        description: "Sale completed successfully",
+        title: "Sale Completed",
+        description: `Transaction created successfully. Total: $${data.transaction.totalAmount}`,
       });
       
       // Reset form and items
