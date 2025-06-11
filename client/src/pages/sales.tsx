@@ -78,12 +78,17 @@ export default function SalesPage() {
   const createSaleMutation = useMutation({
     mutationFn: (data: any) => 
       apiRequest('POST', '/api/sales', data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
+      console.log('Sale success response:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
       queryClient.invalidateQueries({ queryKey: ['/api/inventory/parts'] });
+      
+      const transactionId = data?.transaction?.id || 'Unknown';
+      const totalAmount = data?.transaction?.totalAmount || '0.00';
+      
       toast({
-        title: "Sale Completed",
-        description: `Transaction created successfully. Total: $${data.transaction.totalAmount}`,
+        title: "Sale Completed Successfully!",
+        description: `Transaction #${transactionId} created. Total: $${totalAmount}`,
       });
       
       // Reset form and items
@@ -243,6 +248,12 @@ export default function SalesPage() {
         lineTotal: item.lineTotal,
       })),
     };
+
+    // Show immediate feedback
+    toast({
+      title: "Processing Sale...",
+      description: "Creating transaction, please wait",
+    });
 
     createSaleMutation.mutate(transactionData);
   };
