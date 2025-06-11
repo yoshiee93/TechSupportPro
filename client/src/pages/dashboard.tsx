@@ -80,7 +80,7 @@ export default function Dashboard() {
   }
 
   return (
-    <>
+    <div>
       {/* Mobile Dashboard */}
       <div className="md:hidden p-4">
         <MobileDashboard />
@@ -313,7 +313,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

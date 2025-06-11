@@ -15,6 +15,7 @@ import TicketTimer from "@/components/timer/ticket-timer";
 import TimeLogsList from "@/components/timer/time-logs-list";
 import { PhotoUpload } from "@/components/attachment/photo-upload";
 import { PhotoGallery } from "@/components/attachment/photo-gallery";
+import MobileTickets from "@/components/mobile/mobile-tickets";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Search, Plus, Filter, TicketIcon, Phone, Mail, MapPin, Edit, Trash2 } from "lucide-react";
@@ -90,7 +91,14 @@ export default function Tickets() {
   }
 
   return (
-    <div className="p-6">
+    <>
+      {/* Mobile Tickets */}
+      <div className="md:hidden">
+        <MobileTickets />
+      </div>
+
+      {/* Desktop Tickets */}
+      <div className="hidden md:block p-6">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Repair Tickets</h1>
         
@@ -416,6 +424,7 @@ export default function Tickets() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+      </div>
+    </>
   );
 }
