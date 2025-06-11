@@ -138,14 +138,18 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...', cameraId ? `for camera: ${cameraId}` : 'default');
       
-      // Build video constraints
+      // Build video constraints optimized for Samsung phones
       const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: 1920, max: 1920 },
+        height: { ideal: 1080, max: 1080 },
         facingMode: "environment"
       };
       
-      // Use specific camera if provided
+      // Use specific camera if provided, with fallback for Samsung compatibility
       if (cameraId) {
-        videoConstraints.deviceId = { exact: cameraId };
+        videoConstraints.deviceId = { ideal: cameraId };
+        // Remove facingMode when using specific deviceId to avoid conflicts
+        delete videoConstraints.facingMode;
       }
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -162,6 +166,30 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       return true;
     } catch (err) {
       console.error('Camera permission error:', err);
+      
+      // Try fallback constraints for Samsung phones
+      if (cameraId && err instanceof Error && (err.name === 'OverconstrainedError' || err.name === 'NotReadableError')) {
+        console.log('Trying fallback constraints for Samsung camera...');
+        try {
+          const fallbackConstraints: MediaTrackConstraints = {
+            deviceId: { exact: cameraId },
+            width: { min: 640, ideal: 1280 },
+            height: { min: 480, ideal: 720 }
+          };
+          
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: fallbackConstraints });
+          fallbackStream.getTracks().forEach(track => track.stop());
+          
+          setHasPermission(true);
+          setError(null);
+          console.log('Samsung camera fallback successful');
+          return true;
+          
+        } catch (fallbackErr) {
+          console.error('Samsung camera fallback failed:', fallbackErr);
+        }
+      }
+      
       setHasPermission(false);
       
       let errorMessage = 'Camera access denied';
@@ -172,6 +200,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
           errorMessage = 'No camera found. Please ensure your device has a camera.';
         } else if (err.name === 'NotSupportedError') {
           errorMessage = 'Camera not supported by this browser.';
+        } else if (err.name === 'OverconstrainedError') {
+          errorMessage = 'Selected camera not available. Try switching to a different camera.';
+        } else if (err.name === 'NotReadableError') {
+          errorMessage = 'Camera is being used by another application. Please close other camera apps and try again.';
         } else {
           errorMessage = `Camera error: ${err.message}`;
         }
@@ -277,10 +309,16 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     await new Promise(resolve => setTimeout(resolve, 200));
     
     try {
-      // Start with new camera
+      // Start with new camera using Samsung-compatible constraints
       if (!codeReader.current) {
         codeReader.current = new BrowserMultiFormatReader();
       }
+      
+      // For Samsung phones, we need to specify constraints more carefully
+      const hints = new Map();
+      hints.set('deviceId', newCameraId);
+      hints.set('width', 1920);
+      hints.set('height', 1080);
       
       await codeReader.current.decodeFromVideoDevice(
         newCameraId,
@@ -362,10 +400,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Starting barcode scanning...');
       
-      // Start decoding with selected camera device
-      await codeReader.current.decodeFromVideoDevice(
-        selectedCameraId || null, // Use selected camera or default
-        videoRef.current,
+      // Start decoding with selected camera device, using constraints if available
+      const cameraId = selectedCameraId || null;
+      
+      try {
+        await codeReader.current.decodeFromVideoDevice(
+          cameraId,
+          videoRef.current,
         (result, error) => {
           if (result) {
             const scannedText = result.getText();
@@ -396,18 +437,65 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
             console.log('Scanner actively looking for barcodes...');
           }
         }
-      );
-      
-      // Trigger focus after a short delay
-      setTimeout(() => {
-        triggerFocus();
-      }, 1000);
-      
-      console.log('Barcode scanner started successfully - camera will auto-focus for better detection');
+        );
+        
+        // Trigger focus after a short delay
+        setTimeout(() => {
+          triggerFocus();
+        }, 1000);
+        
+        console.log('Barcode scanner started successfully - camera will auto-focus for better detection');
+        setIsScanning(true);
+        setError(null);
+        
+      } catch (scanErr) {
+        console.error('Primary scanning failed:', scanErr);
+        
+        // Try fallback for Samsung camera issues
+        if (cameraId && scanErr instanceof Error && 
+            (scanErr.name === 'NotReadableError' || scanErr.name === 'OverconstrainedError')) {
+          console.log('Attempting Samsung camera fallback...');
+          try {
+            // Reset scanner
+            codeReader.current.reset();
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Try with default camera (no specific deviceId)
+            await codeReader.current.decodeFromVideoDevice(
+              null,
+              videoRef.current,
+              (result, error) => {
+                if (result) {
+                  const scannedText = result.getText();
+                  console.log('Barcode detected with fallback:', scannedText);
+                  onScan(scannedText.trim());
+                  stopScanning();
+                  onClose();
+                }
+                if (error && !(error instanceof NotFoundException)) {
+                  console.error("Fallback scanning error:", error);
+                }
+              }
+            );
+            
+            console.log('Fallback scanner started successfully');
+            setIsScanning(true);
+            setError(null);
+            return;
+            
+          } catch (fallbackErr) {
+            console.error('Fallback also failed:', fallbackErr);
+          }
+        }
+        
+        // If all attempts fail
+        const errorMessage = scanErr instanceof Error ? scanErr.message : String(scanErr);
+        setError(`Failed to start camera: ${errorMessage}`);
+        setIsScanning(false);
+      }
     } catch (err) {
-      console.error("Failed to start scanning:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(`Failed to start camera: ${errorMessage}`);
+      console.error("Scanner initialization failed:", err);
+      setError('Scanner initialization failed. Please refresh and try again.');
       setIsScanning(false);
     }
   };
