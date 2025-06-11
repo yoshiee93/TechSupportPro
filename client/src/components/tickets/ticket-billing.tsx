@@ -32,12 +32,12 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
   const queryClient = useQueryClient();
 
   // Fetch billable items for this ticket
-  const { data: billableItems = [], isLoading: loadingItems } = useQuery({
+  const { data: billableItems = [], isLoading: loadingItems } = useQuery<any[]>({
     queryKey: ['/api/billable-items/ticket', ticketId],
   });
 
   // Fetch available parts
-  const { data: parts = [] } = useQuery({
+  const { data: parts = [] } = useQuery<any[]>({
     queryKey: ['/api/inventory/parts'],
   });
 
@@ -140,7 +140,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
       return;
     }
 
-    const selectedPart = parts.find((p: any) => p.id === parseInt(selectedPartId));
+    const selectedPart = (parts as any[]).find((p: any) => p.id === parseInt(selectedPartId));
     let itemData;
 
     if (itemType === 'part') {
@@ -168,8 +168,8 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
     addItemMutation.mutate(itemData);
   };
 
-  const totalAmount = billableItems.reduce((sum: number, item: any) => sum + parseFloat(item.lineTotal || 0), 0);
-  const unbilledItems = billableItems.filter((item: any) => !item.invoiceId);
+  const totalAmount = (billableItems as any[]).reduce((sum: number, item: any) => sum + parseFloat(item.lineTotal || 0), 0);
+  const unbilledItems = (billableItems as any[]).filter((item: any) => !item.invoiceId);
   const canGenerateInvoice = unbilledItems.length > 0;
 
   return (
@@ -212,7 +212,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
                           <SelectValue placeholder="Choose a part..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {parts.map((part: any) => (
+                          {(parts as any[]).map((part: any) => (
                             <SelectItem key={part.id} value={part.id.toString()}>
                               {part.name} - ${part.price} (Stock: {part.quantity})
                             </SelectItem>
@@ -308,7 +308,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
       {/* Billable Items List */}
       {loadingItems ? (
         <div className="text-center py-8">Loading billable items...</div>
-      ) : billableItems.length === 0 ? (
+      ) : (billableItems as any[]).length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
@@ -320,7 +320,7 @@ export function TicketBilling({ ticketId, clientId }: TicketBillingProps) {
         </Card>
       ) : (
         <div className="space-y-4">
-          {billableItems.map((item: any) => (
+          {(billableItems as any[]).map((item: any) => (
             <Card key={item.id} className={item.invoiceId ? 'bg-green-50 border-green-200' : ''}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
