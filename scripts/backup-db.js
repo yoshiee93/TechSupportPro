@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const BACKUP_DIR = process.env.BACKUP_DIR || './backups';
@@ -149,4 +149,4 @@ switch (command) {
     break;
 }
 
-module.exports = { createBackup, restoreBackup, listBackups, cleanupOldBackups };
+export { createBackup, restoreBackup, listBackups, cleanupOldBackups };
