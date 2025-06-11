@@ -1,12 +1,16 @@
 import { 
   users, clients, devices, tickets, partsOrders, activityLogs, repairNotes, reminders, timeLogs, attachments,
   suppliers, categories, parts, purchaseOrders, purchaseOrderItems, stockMovements, lowStockAlerts,
+  billableItems, salesTransactions, saleItems, payments,
   type User, type UpsertUser, type InsertUser, type Client, type Device, type Ticket, type PartsOrder, type ActivityLog, type RepairNote, type Reminder, type TimeLog, type Attachment,
   type Supplier, type Category, type Part, type PurchaseOrder, type PurchaseOrderItem, type StockMovement, type LowStockAlert,
+  type BillableItem, type SalesTransaction, type SaleItem, type Payment,
   type InsertClient, type InsertDevice, type InsertTicket, type InsertPartsOrder, 
   type InsertActivityLog, type InsertRepairNote, type InsertReminder, type InsertTimeLog, type InsertAttachment,
   type InsertSupplier, type InsertCategory, type InsertPart, type InsertPurchaseOrder, type InsertPurchaseOrderItem, type InsertStockMovement, type InsertLowStockAlert,
-  type TicketWithRelations, type ClientWithDevices, type PartWithRelations, type PurchaseOrderWithRelations, type CategoryWithParent
+  type InsertBillableItem, type InsertSalesTransaction, type InsertSaleItem, type InsertPayment,
+  type TicketWithRelations, type ClientWithDevices, type PartWithRelations, type PurchaseOrderWithRelations, type CategoryWithParent,
+  type SalesTransactionWithRelations, type BillableItemWithTicket
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, count, sql, inArray } from "drizzle-orm";
@@ -144,6 +148,33 @@ export interface IStorage {
   getLowStockAlerts(): Promise<LowStockAlert[]>;
   createLowStockAlert(alert: InsertLowStockAlert): Promise<LowStockAlert>;
   resolveLowStockAlert(id: number): Promise<void>;
+
+  // Phase 3.5: Billing & Sales
+  // Billable Items
+  getBillableItems(ticketId?: number): Promise<BillableItemWithTicket[]>;
+  getUnbilledItems(): Promise<BillableItemWithTicket[]>;
+  createBillableItem(item: InsertBillableItem): Promise<BillableItem>;
+  updateBillableItem(id: number, item: Partial<InsertBillableItem>): Promise<BillableItem>;
+  markItemsAsBilled(itemIds: number[]): Promise<void>;
+  deleteBillableItem(id: number): Promise<void>;
+
+  // Sales Transactions
+  getSalesTransactions(): Promise<SalesTransactionWithRelations[]>;
+  getSalesTransaction(id: number): Promise<SalesTransactionWithRelations | undefined>;
+  createSalesTransaction(transaction: InsertSalesTransaction): Promise<SalesTransaction>;
+  updateSalesTransaction(id: number, transaction: Partial<InsertSalesTransaction>): Promise<SalesTransaction>;
+  deleteSalesTransaction(id: number): Promise<void>;
+
+  // Sale Items
+  createSaleItem(item: InsertSaleItem): Promise<SaleItem>;
+  updateSaleItem(id: number, item: Partial<InsertSaleItem>): Promise<SaleItem>;
+  deleteSaleItem(id: number): Promise<void>;
+
+  // Payments (future-proofed)
+  getPayments(transactionId?: number): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment>;
+  deletePayment(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

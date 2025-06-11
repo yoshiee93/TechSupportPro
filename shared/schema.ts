@@ -723,3 +723,15 @@ export type CategoryWithParent = Category & {
   parent?: Category;
   children?: Category[];
 };
+
+// Phase 3.5 Extended Types
+export type SalesTransactionWithRelations = SalesTransaction & {
+  client: Client;
+  createdBy: User;
+  items: (SaleItem & { part?: Part })[];
+  payments: Payment[];
+};
+
+export type BillableItemWithTicket = BillableItem & {
+  ticket: TicketWithRelations;
+};
