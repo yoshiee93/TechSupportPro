@@ -3,7 +3,8 @@ import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Camera, X, Scan } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Camera, X, Scan, Smartphone } from "lucide-react";
 
 interface BarcodeScannerProps {
   isOpen: boolean;
@@ -16,6 +17,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
 
@@ -24,6 +28,15 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Always create a fresh instance when dialog opens
       codeReader.current = new BrowserMultiFormatReader();
       console.log('BrowserMultiFormatReader initialized');
+      
+      // Detect if mobile device
+      const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(checkMobile);
+      
+      // Enumerate cameras if mobile
+      if (checkMobile) {
+        enumerateCameras();
+      }
     }
 
     return () => {
@@ -35,18 +48,74 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     };
   }, [isOpen]);
 
-  const requestCameraPermission = async () => {
+  const enumerateCameras = async () => {
+    try {
+      // Request basic camera permission first to get device labels
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Now enumerate devices with proper labels
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      // Filter for rear cameras (Samsung phones)
+      const rearCameras = videoDevices.filter(device => {
+        const label = device.label.toLowerCase();
+        return label.includes('back') || label.includes('rear') || 
+               (!label.includes('front') && !label.includes('user'));
+      });
+      
+      console.log('Available cameras:', videoDevices);
+      console.log('Rear cameras found:', rearCameras);
+      
+      setAvailableCameras(rearCameras);
+      
+      // Auto-select the first rear camera (usually main camera)
+      if (rearCameras.length > 0) {
+        setSelectedCameraId(rearCameras[0].deviceId);
+      }
+      
+    } catch (err) {
+      console.log('Camera enumeration failed:', err);
+      // Fallback to default camera selection
+    }
+  };
+
+  const getCameraDisplayName = (device: MediaDeviceInfo) => {
+    const label = device.label.toLowerCase();
+    
+    if (label.includes('ultra') || label.includes('wide')) {
+      return '📐 Ultra Wide';
+    } else if (label.includes('telephoto') || label.includes('tele') || label.includes('zoom')) {
+      return '🔍 Telephoto';
+    } else if (label.includes('macro')) {
+      return '🔬 Macro';
+    } else {
+      return '📷 Main Camera';
+    }
+  };
+
+  const requestCameraPermission = async (cameraId?: string) => {
     try {
       // Check if mediaDevices is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera not supported by this browser');
       }
 
-      console.log('Attempting to request camera permission...');
+      console.log('Attempting to request camera permission...', cameraId ? `for camera: ${cameraId}` : 'default');
       
-      // Try basic video access first
+      // Build video constraints
+      const videoConstraints: MediaTrackConstraints = {
+        facingMode: "environment"
+      };
+      
+      // Use specific camera if provided
+      if (cameraId) {
+        videoConstraints.deviceId = { exact: cameraId };
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true 
+        video: videoConstraints 
       });
       
       setHasPermission(true);
@@ -154,6 +223,67 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     }
   };
 
+  const switchCamera = async (newCameraId: string) => {
+    if (!isScanning) {
+      setSelectedCameraId(newCameraId);
+      return;
+    }
+
+    console.log('Switching camera during scanning to:', newCameraId);
+    
+    // Stop current scanning
+    if (codeReader.current) {
+      codeReader.current.reset();
+    }
+    
+    // Update selected camera
+    setSelectedCameraId(newCameraId);
+    
+    // Wait briefly for cleanup
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    try {
+      // Start with new camera
+      await codeReader.current.decodeFromVideoDevice(
+        newCameraId,
+        videoRef.current,
+        (result, error) => {
+          if (result) {
+            const scannedText = result.getText();
+            console.log('Barcode detected successfully:', {
+              text: scannedText,
+              format: result.getBarcodeFormat(),
+              length: scannedText.length,
+              rawBytes: Array.from(scannedText).map(c => c.charCodeAt(0)),
+              trimmed: scannedText.trim(),
+              timestamp: new Date().toISOString()
+            });
+            
+            const cleanText = scannedText.trim();
+            console.log('Sending cleaned barcode to parent:', cleanText);
+            onScan(cleanText);
+            stopScanning();
+            onClose();
+          }
+          
+          if (error && !(error instanceof NotFoundException)) {
+            console.error("Scanning error:", error);
+          }
+          
+          if (!result && Math.random() < 0.01) {
+            console.log('Scanner actively looking for barcodes...');
+          }
+        }
+      );
+      
+      console.log('Camera switched successfully');
+    } catch (err) {
+      console.error('Camera switch failed:', err);
+      setError('Failed to switch camera. Please try again.');
+      setIsScanning(false);
+    }
+  };
+
   const startScanning = async () => {
     console.log('Start scanning button clicked');
     
@@ -185,7 +315,7 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     try {
       console.log('Requesting camera permission...');
 
-      const hasCamera = await requestCameraPermission();
+      const hasCamera = await requestCameraPermission(selectedCameraId);
       if (!hasCamera) {
         console.log('Camera permission denied');
         setIsScanning(false);
@@ -194,9 +324,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Starting barcode scanning...');
       
-      // Start decoding with improved callback handling
+      // Start decoding with selected camera device
       await codeReader.current.decodeFromVideoDevice(
-        null, // Use default device
+        selectedCameraId || null, // Use selected camera or default
         videoRef.current,
         (result, error) => {
           if (result) {
@@ -304,6 +434,32 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                   <Camera className="w-8 h-8 text-gray-400" />
                 </div>
               </div>
+              
+              {/* Camera Selector for Mobile */}
+              {isMobile && availableCameras.length > 1 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                    <Smartphone className="w-4 h-4" />
+                    Multiple cameras detected
+                  </div>
+                  <Select value={selectedCameraId} onValueChange={setSelectedCameraId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select camera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCameras.map((camera) => (
+                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                          {getCameraDisplayName(camera)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-xs text-gray-500">
+                    💡 Ultra-wide for large items, telephoto for small/distant barcodes
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
                   Click start to begin scanning barcodes with your camera
@@ -340,6 +496,25 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                   </div>
                 </div>
               </div>
+              
+              {/* Camera Selector During Scanning */}
+              {isMobile && availableCameras.length > 1 && (
+                <div className="space-y-2">
+                  <div className="text-xs text-center text-gray-600">Switch Camera:</div>
+                  <Select value={selectedCameraId} onValueChange={switchCamera}>
+                    <SelectTrigger className="w-full h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCameras.map((camera) => (
+                        <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                          {getCameraDisplayName(camera)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <div className="text-center space-y-2">
                 <p className="text-sm text-gray-600">
