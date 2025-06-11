@@ -136,14 +136,27 @@ router.get("/insights", async (req, res) => {
       });
     }
 
+    // Get device information for tickets
+    const ticketsWithDevices = await Promise.all(
+      recentTickets.map(async (ticket) => {
+        const [device] = await db
+          .select()
+          .from(devices)
+          .where(eq(devices.id, ticket.deviceId));
+        return { ...ticket, device };
+      })
+    );
+
     // Analyze patterns in recent tickets
-    const deviceTypes = recentTickets.reduce((acc: any, ticket) => {
-      const device = `${ticket.deviceBrand} ${ticket.deviceModel}`;
-      acc[device] = (acc[device] || 0) + 1;
+    const deviceTypes = ticketsWithDevices.reduce((acc: any, ticket) => {
+      if (ticket.device) {
+        const deviceKey = `${ticket.device.brand} ${ticket.device.model}`;
+        acc[deviceKey] = (acc[deviceKey] || 0) + 1;
+      }
       return acc;
     }, {});
 
-    const commonIssues = recentTickets.map(ticket => ticket.issueDescription);
+    const commonIssues = recentTickets.map(ticket => ticket.description);
     
     const insights = {
       totalTickets: recentTickets.length,

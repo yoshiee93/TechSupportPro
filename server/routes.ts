@@ -8,6 +8,7 @@ import { registerInventoryRoutes } from "./modules/inventory/routes";
 import { registerOrderingRoutes } from "./modules/ordering/routes";
 import { registerAttachmentRoutes } from "./modules/attachments/routes";
 import { registerBillingRoutes } from "./modules/billing/routes";
+import aiRoutes from "./modules/ai/routes";
 import { errorHandler } from "./shared/middleware/error-handler";
 import { setupWebSocket } from "./websocket";
 
@@ -23,6 +24,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerOrderingRoutes(app);
   registerAttachmentRoutes(app);
   registerBillingRoutes(app);
+  
+  // AI routes
+  app.use("/api/ai", aiRoutes);
 
   // Error handling middleware (must be last)
   app.use(errorHandler);
