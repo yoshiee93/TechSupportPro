@@ -32,11 +32,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Detect if mobile device
       const checkMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       setIsMobile(checkMobile);
+      console.log('Mobile detection:', { checkMobile, userAgent: navigator.userAgent });
       
-      // Enumerate cameras if mobile
-      if (checkMobile) {
-        enumerateCameras();
-      }
+      // Always enumerate cameras to show selector
+      enumerateCameras();
     }
 
     return () => {
@@ -50,34 +49,69 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
   const enumerateCameras = async () => {
     try {
+      console.log('Starting camera enumeration...');
+      
       // Request basic camera permission first to get device labels
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       stream.getTracks().forEach(track => track.stop());
+      console.log('Camera permission granted for enumeration');
       
       // Now enumerate devices with proper labels
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       
-      // Filter for rear cameras (Samsung phones)
-      const rearCameras = videoDevices.filter(device => {
-        const label = device.label.toLowerCase();
-        return label.includes('back') || label.includes('rear') || 
-               (!label.includes('front') && !label.includes('user'));
-      });
+      console.log('All video devices found:', videoDevices.map(d => ({
+        deviceId: d.deviceId,
+        label: d.label,
+        groupId: d.groupId
+      })));
       
-      console.log('Available cameras:', videoDevices);
-      console.log('Rear cameras found:', rearCameras);
+      // For mobile devices, prefer rear cameras
+      let cameraList = videoDevices;
+      if (isMobile) {
+        const rearCameras = videoDevices.filter(device => {
+          const label = device.label.toLowerCase();
+          return label.includes('back') || label.includes('rear') || 
+                 (!label.includes('front') && !label.includes('user') && !label.includes('facing'));
+        });
+        
+        console.log('Rear cameras found:', rearCameras.map(d => ({
+          deviceId: d.deviceId,
+          label: d.label
+        })));
+        
+        // Use rear cameras if found, otherwise use all cameras
+        cameraList = rearCameras.length > 0 ? rearCameras : videoDevices;
+      }
       
-      setAvailableCameras(rearCameras);
+      console.log('Final camera list:', cameraList.map(d => ({
+        deviceId: d.deviceId,
+        label: d.label,
+        displayName: getCameraDisplayName(d)
+      })));
       
-      // Auto-select the first rear camera (usually main camera)
-      if (rearCameras.length > 0) {
-        setSelectedCameraId(rearCameras[0].deviceId);
+      setAvailableCameras(cameraList);
+      
+      // Auto-select the first camera
+      if (cameraList.length > 0) {
+        setSelectedCameraId(cameraList[0].deviceId);
+        console.log('Auto-selected camera:', cameraList[0].label);
       }
       
     } catch (err) {
-      console.log('Camera enumeration failed:', err);
-      // Fallback to default camera selection
+      console.error('Camera enumeration failed:', err);
+      // Try to get basic camera list without permission
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        console.log('Fallback camera enumeration:', videoDevices.length, 'cameras found');
+        setAvailableCameras(videoDevices);
+        if (videoDevices.length > 0) {
+          setSelectedCameraId(videoDevices[0].deviceId);
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback enumeration also failed:', fallbackErr);
+      }
     }
   };
 
@@ -439,12 +473,15 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                 </div>
               </div>
               
-              {/* Camera Selector for Mobile */}
-              {isMobile && availableCameras.length > 1 && (
+              {/* Camera Selector - Show when cameras are available */}
+              {availableCameras.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
                     <Smartphone className="w-4 h-4" />
-                    Multiple cameras detected
+                    {availableCameras.length > 1 ? 'Multiple cameras detected' : 'Camera available'}
+                  </div>
+                  <div className="text-xs text-center text-gray-500">
+                    Found {availableCameras.length} camera(s)
                   </div>
                   <Select value={selectedCameraId} onValueChange={setSelectedCameraId}>
                     <SelectTrigger className="w-full">
@@ -502,9 +539,11 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
               </div>
               
               {/* Camera Selector During Scanning */}
-              {isMobile && availableCameras.length > 1 && (
+              {availableCameras.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs text-center text-gray-600">Switch Camera:</div>
+                  <div className="text-xs text-center text-gray-600">
+                    {availableCameras.length > 1 ? 'Switch Camera:' : 'Current Camera:'}
+                  </div>
                   <Select value={selectedCameraId} onValueChange={switchCamera}>
                     <SelectTrigger className="w-full h-8 text-sm">
                       <SelectValue />
