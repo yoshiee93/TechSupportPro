@@ -24,6 +24,7 @@ const saleItemSchema = z.object({
   unitPrice: z.string().min(1, 'Unit price is required'),
   taxRate: z.string().default('10.00'),
   taxInclusive: z.boolean().default(false),
+  lineTotal: z.string().optional(),
 });
 
 const salesTransactionSchema = z.object({
@@ -76,10 +77,7 @@ export default function SalesPage() {
   // Create sales transaction mutation
   const createSaleMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('/api/sales', {
-        method: 'POST',
-        body: data
-      }),
+      apiRequest('POST', '/api/sales', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
       toast({

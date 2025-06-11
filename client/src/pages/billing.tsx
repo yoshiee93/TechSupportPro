@@ -36,10 +36,7 @@ export default function BillingPage() {
   // Mark items as billed mutation
   const markBilledMutation = useMutation({
     mutationFn: (itemIds: number[]) => 
-      apiRequest('/api/billable-items/mark-billed', {
-        method: 'POST',
-        body: { itemIds }
-      }),
+      apiRequest('POST', '/api/billable-items/mark-billed', { itemIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/billable-items/unbilled'] });
       setSelectedItems([]);

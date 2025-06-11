@@ -1131,16 +1131,16 @@ export class DatabaseStorage implements IStorage {
   
   // Billable Items
   async getBillableItems(ticketId?: number): Promise<BillableItemWithTicket[]> {
-    let query = db.select()
+    const baseQuery = db.select()
       .from(billableItems)
       .leftJoin(tickets, eq(billableItems.ticketId, tickets.id))
       .leftJoin(clients, eq(tickets.clientId, clients.id))
       .leftJoin(devices, eq(tickets.deviceId, devices.id))
       .orderBy(desc(billableItems.createdAt));
 
-    if (ticketId) {
-      query = query.where(eq(billableItems.ticketId, ticketId));
-    }
+    const query = ticketId 
+      ? baseQuery.where(eq(billableItems.ticketId, ticketId))
+      : baseQuery;
 
     const result = await query;
     
