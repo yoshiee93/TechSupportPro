@@ -20,8 +20,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
+  const [cameraRefreshKey, setCameraRefreshKey] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
+  const activeStreams = useRef<MediaStream[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,35 +60,65 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     try {
       console.log('Starting camera enumeration (fresh session)...');
       
-      // Samsung phone fix: Multiple permission requests to reset camera state
+      // Samsung phone fix: Complete camera state reset with stream tracking
+      console.log('Camera refresh key:', cameraRefreshKey);
+      
+      // Step 1: Force camera resource cleanup
+      await forceCleanupAllCameraStreams();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Step 2: Multiple permission requests to reset Samsung camera state
+      const streams: MediaStream[] = [];
+      
       try {
-        // First request with basic constraints
-        const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        await new Promise(resolve => setTimeout(resolve, 100));
-        basicStream.getTracks().forEach(track => track.stop());
+        // Request all different camera types to force enumeration refresh
+        const constraints = [
+          { video: true },
+          { video: { facingMode: "environment" } },
+          { video: { facingMode: "user" } },
+          { video: { width: 640, height: 480 } }
+        ];
         
-        // Second request with environment facing
-        const envStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" }
+        for (const constraint of constraints) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraint);
+            streams.push(stream);
+            activeStreams.current.push(stream);
+            await new Promise(resolve => setTimeout(resolve, 150));
+          } catch (err) {
+            console.log('Permission request failed for constraint:', constraint, err);
+          }
+        }
+        
+        console.log('Multiple camera permissions granted, found', streams.length, 'streams');
+        
+        // Clean up all streams
+        streams.forEach(stream => {
+          stream.getTracks().forEach(track => track.stop());
         });
-        await new Promise(resolve => setTimeout(resolve, 100));
-        envStream.getTracks().forEach(track => track.stop());
+        activeStreams.current = [];
         
-        console.log('Multiple camera permissions granted for Samsung compatibility');
       } catch (permErr) {
-        console.log('Samsung permission workaround failed, using standard approach:', permErr);
+        console.log('Samsung multiple permission workaround failed:', permErr);
         
-        // Fallback to standard permission request
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        
-        await new Promise(resolve => setTimeout(resolve, 200));
-        stream.getTracks().forEach(track => track.stop());
+        // Fallback to standard single permission request
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            } 
+          });
+          
+          activeStreams.current.push(stream);
+          await new Promise(resolve => setTimeout(resolve, 200));
+          stream.getTracks().forEach(track => track.stop());
+          activeStreams.current = [];
+        } catch (fallbackErr) {
+          console.error('All permission requests failed:', fallbackErr);
+          throw fallbackErr;
+        }
       }
       
       console.log('Camera permissions complete, enumerating devices...');
@@ -470,8 +502,31 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     setIsScanning(false);
   };
 
+  const forceCleanupAllCameraStreams = async () => {
+    // Stop all active streams
+    activeStreams.current.forEach(stream => {
+      stream.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
+    });
+    activeStreams.current = [];
+    
+    // Force browser to release camera resources
+    try {
+      const dummyStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1, height: 1 } });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      dummyStream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.log('Camera cleanup dummy stream failed:', err);
+    }
+  };
+
   const handleClose = () => {
     stopScanning();
+    
+    // Samsung-specific camera cleanup
+    forceCleanupAllCameraStreams();
     
     // Force complete reset of camera state when closing
     setAvailableCameras([]);
@@ -479,6 +534,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     setHasPermission(null);
     setError(null);
     setIsScanning(false);
+    
+    // Increment refresh key to force re-enumeration
+    setCameraRefreshKey(prev => prev + 1);
     
     // Reset the code reader
     if (codeReader.current) {
