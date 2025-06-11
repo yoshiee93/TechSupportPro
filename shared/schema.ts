@@ -63,6 +63,9 @@ export const tickets = pgTable("tickets", {
   isPaid: boolean("is_paid").default(false),
   paymentMethod: text("payment_method"),
   paymentDate: timestamp("payment_date"),
+  aiAnalysis: jsonb("ai_analysis"), // AI analysis results
+  estimatedCompletionTime: timestamp("estimated_completion_time"), // AI-estimated completion
+  repairSuggestions: jsonb("repair_suggestions"), // AI-generated repair steps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
