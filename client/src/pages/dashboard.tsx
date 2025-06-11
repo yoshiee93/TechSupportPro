@@ -88,15 +88,15 @@ export default function Dashboard() {
 
       {/* Desktop Dashboard */}
       <div className="hidden md:block p-3 sm:p-6">
-      <div className="flex items-center justify-between mb-6 sm:mb-8">
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
-          <div className="hidden sm:flex text-sm text-gray-500 items-center">
-            <Calendar className="w-4 h-4 mr-1" />
-            {format(new Date(), "MMMM d, yyyy")}
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+            <div className="hidden sm:flex text-sm text-gray-500 items-center">
+              <Calendar className="w-4 h-4 mr-1" />
+              {format(new Date(), "MMMM d, yyyy")}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -313,7 +313,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-      </div>
       </div>
     </>
   );
