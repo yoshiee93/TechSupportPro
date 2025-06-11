@@ -260,6 +260,60 @@ export const lowStockAlerts = pgTable("low_stock_alerts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Phase 3.5: Billing & Sales System
+export const billableItems = pgTable("billable_items", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  type: text("type").notNull(), // labor, parts, service
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).default('1.00'),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default('10.00'), // Default 10%
+  taxInclusive: boolean("tax_inclusive").default(false),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  billingStatus: text("billing_status").notNull().default('pending'), // pending, billed, void
+  billedDate: timestamp("billed_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const salesTransactions = pgTable("sales_transactions", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  saleDate: timestamp("sale_date").defaultNow().notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: text("payment_status").notNull().default('pending'), // pending, partial, paid
+  notes: text("notes"),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const saleItems = pgTable("sale_items", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id").notNull().references(() => salesTransactions.id),
+  partId: integer("part_id").references(() => parts.id), // nullable for non-inventory items
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default('10.00'),
+  taxInclusive: boolean("tax_inclusive").default(false),
+  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Future-proofed payment tracking
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id").notNull().references(() => salesTransactions.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method").notNull(), // cash, card, transfer, etc.
+  paymentDate: timestamp("payment_date").defaultNow().notNull(),
+  reference: text("reference"), // receipt number, transaction id, etc.
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const clientsRelations = relations(clients, ({ many }) => ({
   devices: many(devices),
@@ -399,6 +453,45 @@ export const lowStockAlertsRelations = relations(lowStockAlerts, ({ one }) => ({
   }),
 }));
 
+// Phase 3.5 Relations
+export const billableItemsRelations = relations(billableItems, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [billableItems.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const salesTransactionsRelations = relations(salesTransactions, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [salesTransactions.clientId],
+    references: [clients.id],
+  }),
+  createdBy: one(users, {
+    fields: [salesTransactions.createdByUserId],
+    references: [users.id],
+  }),
+  items: many(saleItems),
+  payments: many(payments),
+}));
+
+export const saleItemsRelations = relations(saleItems, ({ one }) => ({
+  transaction: one(salesTransactions, {
+    fields: [saleItems.transactionId],
+    references: [salesTransactions.id],
+  }),
+  part: one(parts, {
+    fields: [saleItems.partId],
+    references: [parts.id],
+  }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  transaction: one(salesTransactions, {
+    fields: [payments.transactionId],
+    references: [salesTransactions.id],
+  }),
+}));
+
 // Insert schemas
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
@@ -502,6 +595,27 @@ export const insertLowStockAlertSchema = createInsertSchema(lowStockAlerts).omit
   createdAt: true,
 });
 
+// Phase 3.5 Insert Schemas
+export const insertBillableItemSchema = createInsertSchema(billableItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSalesTransactionSchema = createInsertSchema(salesTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSaleItemSchema = createInsertSchema(saleItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // User schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -543,6 +657,12 @@ export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSche
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
 export type InsertLowStockAlert = z.infer<typeof insertLowStockAlertSchema>;
 
+// Phase 3.5 Types
+export type InsertBillableItem = z.infer<typeof insertBillableItemSchema>;
+export type InsertSalesTransaction = z.infer<typeof insertSalesTransactionSchema>;
+export type InsertSaleItem = z.infer<typeof insertSaleItemSchema>;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
 export type Client = typeof clients.$inferSelect;
 export type Device = typeof devices.$inferSelect;
 export type Ticket = typeof tickets.$inferSelect;
@@ -561,6 +681,12 @@ export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
 export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
 export type StockMovement = typeof stockMovements.$inferSelect;
 export type LowStockAlert = typeof lowStockAlerts.$inferSelect;
+
+// Phase 3.5 Select Types
+export type BillableItem = typeof billableItems.$inferSelect;
+export type SalesTransaction = typeof salesTransactions.$inferSelect;
+export type SaleItem = typeof saleItems.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
 
 // Extended types with relations
 export type TicketWithRelations = Ticket & {
