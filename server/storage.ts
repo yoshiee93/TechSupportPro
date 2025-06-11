@@ -177,6 +177,9 @@ export interface IStorage {
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment>;
   deletePayment(id: number): Promise<void>;
+
+  // Invoices
+  getInvoices(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1268,6 +1271,48 @@ export class DatabaseStorage implements IStorage {
       totalAmount,
       generatedAt: new Date()
     };
+  }
+
+  async getInvoices(): Promise<any[]> {
+    // Get all billable items that have been billed (have invoiceId)
+    const result = await db.select({
+      invoiceId: billableItems.invoiceId,
+      ticketId: billableItems.ticketId,
+      ticketNumber: tickets.ticketNumber,
+      clientName: clients.name,
+      clientEmail: clients.email,
+      items: sql<string>`json_agg(json_build_object(
+        'description', ${billableItems.itemDescription},
+        'quantity', ${billableItems.quantity},
+        'unitPrice', ${billableItems.unitPrice},
+        'lineTotal', ${billableItems.lineTotal}
+      ))`,
+      subtotal: sql<number>`sum(${billableItems.lineTotal})`,
+      taxAmount: sql<number>`sum(${billableItems.lineTotal}) * 0.1`,
+      totalAmount: sql<number>`sum(${billableItems.lineTotal}) * 1.1`,
+      generatedAt: sql<Date>`min(${billableItems.createdAt})`
+    })
+    .from(billableItems)
+    .leftJoin(tickets, eq(billableItems.ticketId, tickets.id))
+    .leftJoin(clients, eq(tickets.clientId, clients.id))
+    .where(sql`${billableItems.invoiceId} IS NOT NULL`)
+    .groupBy(billableItems.invoiceId, billableItems.ticketId, tickets.ticketNumber, clients.name, clients.email)
+    .orderBy(desc(sql`min(${billableItems.createdAt})`));
+
+    return result.map(invoice => ({
+      id: invoice.invoiceId,
+      invoiceNumber: `INV-${invoice.ticketId}-${invoice.invoiceId}`,
+      ticketId: invoice.ticketId,
+      ticketNumber: invoice.ticketNumber,
+      clientName: invoice.clientName,
+      clientEmail: invoice.clientEmail,
+      items: invoice.items,
+      subtotal: parseFloat(invoice.subtotal?.toString() || '0').toFixed(2),
+      taxAmount: parseFloat(invoice.taxAmount?.toString() || '0').toFixed(2),
+      totalAmount: parseFloat(invoice.totalAmount?.toString() || '0').toFixed(2),
+      status: 'pending', // Default status for now
+      generatedAt: invoice.generatedAt
+    }));
   }
 
   // Sales Transactions

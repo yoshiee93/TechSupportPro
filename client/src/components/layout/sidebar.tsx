@@ -56,6 +56,11 @@ export default function Sidebar() {
       icon: Receipt 
     },
     { 
+      name: "Invoices", 
+      href: "/invoices", 
+      icon: Receipt 
+    },
+    { 
       name: "AI Insights", 
       href: "/ai-insights", 
       icon: Brain 

@@ -240,6 +240,17 @@ router.delete("/billable-items/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Get all invoices
+router.get("/invoices", requireAuth, async (req, res) => {
+  try {
+    const invoices = await storage.getInvoices();
+    res.json(invoices);
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    res.status(500).json({ error: "Failed to get invoices" });
+  }
+});
+
 // Generate invoice for ticket
 router.post("/invoices/generate/:ticketId", requireAuth, async (req, res) => {
   try {
