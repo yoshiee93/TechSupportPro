@@ -84,7 +84,8 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         cameraList = rearCameras.length > 0 ? rearCameras : videoDevices;
       }
       
-      console.log('Final camera list:', cameraList.map(d => ({
+      console.log('Final camera list with indexes:', cameraList.map((d, index) => ({
+        index: index + 1,
         deviceId: d.deviceId,
         label: d.label,
         displayName: getCameraDisplayName(d)
@@ -92,10 +93,18 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       
       setAvailableCameras(cameraList);
       
-      // Auto-select the first camera
-      if (cameraList.length > 0) {
-        setSelectedCameraId(cameraList[0].deviceId);
-        console.log('Auto-selected camera:', cameraList[0].label);
+      // For Samsung phones, prefer the 4th camera if available, otherwise use first
+      let selectedCamera;
+      if (cameraList.length >= 4) {
+        selectedCamera = cameraList[3]; // 4th camera (0-indexed)
+        console.log('Auto-selected 4th camera for Samsung:', selectedCamera.label);
+      } else if (cameraList.length > 0) {
+        selectedCamera = cameraList[0]; // First camera as fallback
+        console.log('Auto-selected first camera:', selectedCamera.label);
+      }
+      
+      if (selectedCamera) {
+        setSelectedCameraId(selectedCamera.deviceId);
       }
       
     } catch (err) {
@@ -115,17 +124,18 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     }
   };
 
-  const getCameraDisplayName = (device: MediaDeviceInfo) => {
+  const getCameraDisplayName = (device: MediaDeviceInfo, index?: number) => {
     const label = device.label.toLowerCase();
+    const cameraNumber = index !== undefined ? `Camera ${index + 1}: ` : '';
     
     if (label.includes('ultra') || label.includes('wide')) {
-      return '📐 Ultra Wide';
+      return `${cameraNumber}📐 Ultra Wide`;
     } else if (label.includes('telephoto') || label.includes('tele') || label.includes('zoom')) {
-      return '🔍 Telephoto';
+      return `${cameraNumber}🔍 Telephoto`;
     } else if (label.includes('macro')) {
-      return '🔬 Macro';
+      return `${cameraNumber}🔬 Macro`;
     } else {
-      return '📷 Main Camera';
+      return `${cameraNumber}📷 Main Camera`;
     }
   };
 
@@ -338,22 +348,24 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Try fallback to default camera for Samsung phones
       try {
         console.log('Attempting fallback to default camera...');
-        codeReader.current.reset();
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        await codeReader.current.decodeFromVideoDevice(
-          null,
-          videoRef.current,
-          (result, error) => {
-            if (result) {
-              console.log('Barcode detected with fallback camera:', result.getText());
-              onScan(result.getText().trim());
-              stopScanning();
-              onClose();
+        if (codeReader.current) {
+          codeReader.current.reset();
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          await codeReader.current.decodeFromVideoDevice(
+            null,
+            videoRef.current,
+            (result, error) => {
+              if (result) {
+                console.log('Barcode detected with fallback camera:', result.getText());
+                onScan(result.getText().trim());
+                stopScanning();
+                onClose();
+              }
             }
-          }
-        );
-        console.log('Fallback camera started successfully');
+          );
+          console.log('Fallback camera started successfully');
+        }
       } catch (fallbackErr) {
         console.error('Fallback camera also failed:', fallbackErr);
         setError('Camera switch failed. Please restart the scanner.');
@@ -578,9 +590,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                       <SelectValue placeholder="Select camera" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableCameras.map((camera) => (
+                      {availableCameras.map((camera, index) => (
                         <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                          {getCameraDisplayName(camera)}
+                          {getCameraDisplayName(camera, index)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -639,9 +651,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableCameras.map((camera) => (
+                      {availableCameras.map((camera, index) => (
                         <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                          {getCameraDisplayName(camera)}
+                          {getCameraDisplayName(camera, index)}
                         </SelectItem>
                       ))}
                     </SelectContent>
