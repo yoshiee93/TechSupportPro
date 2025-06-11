@@ -45,12 +45,12 @@ export default function SalesPage() {
   const queryClient = useQueryClient();
 
   // Fetch clients
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ['/api/clients'],
   });
 
   // Fetch parts for inventory lookup
-  const { data: parts = [] } = useQuery({
+  const { data: parts = [] } = useQuery<any[]>({
     queryKey: ['/api/inventory/parts'],
   });
 
@@ -105,19 +105,19 @@ export default function SalesPage() {
     if (part) {
       itemForm.setValue('partId', part.id);
       itemForm.setValue('description', part.name);
-      itemForm.setValue('unitPrice', part.sellingPrice || part.costPrice || '0.00');
+      itemForm.setValue('unitPrice', part.sellingPrice || part.unitCost || '0.00');
       
       // Show stock level warning
-      if (part.quantityInStock <= 0) {
+      if (part.quantityOnHand <= 0) {
         toast({
           title: "Out of Stock",
           description: `${part.name} is currently out of stock`,
           variant: "destructive",
         });
-      } else if (part.quantityInStock < 5) {
+      } else if (part.quantityOnHand < 5) {
         toast({
           title: "Low Stock Warning",
-          description: `Only ${part.quantityInStock} units remaining`,
+          description: `Only ${part.quantityOnHand} units remaining`,
         });
       }
     } else {
@@ -291,7 +291,7 @@ export default function SalesPage() {
                             const part = parts.find((p: any) => p.id === partId);
                             if (part) {
                               itemForm.setValue('description', part.name);
-                              itemForm.setValue('unitPrice', part.sellingPrice || part.costPrice || '0.00');
+                              itemForm.setValue('unitPrice', part.sellingPrice || part.unitCost || '0.00');
                             }
                           }
                         }}
@@ -306,8 +306,8 @@ export default function SalesPage() {
                           <SelectItem value="">Manual Entry</SelectItem>
                           {parts.map((part: any) => (
                             <SelectItem key={part.id} value={part.id.toString()}>
-                              {part.name} - ${part.sellingPrice || part.costPrice || '0.00'}
-                              {part.quantityInStock <= 0 && ' (Out of Stock)'}
+                              {part.name} - ${part.sellingPrice || part.unitCost || '0.00'}
+                              {part.quantityOnHand <= 0 && ' (Out of Stock)'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -469,8 +469,8 @@ export default function SalesPage() {
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {saleItems.map((item, index) => {
                         const part = item.partId ? parts.find((p: any) => p.id === item.partId) : null;
-                        const hasLowStock = part && part.quantityInStock < 5;
-                        const isOutOfStock = part && part.quantityInStock <= 0;
+                        const hasLowStock = part && part.quantityOnHand < 5;
+                        const isOutOfStock = part && part.quantityOnHand <= 0;
                         
                         return (
                           <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
