@@ -59,21 +59,23 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
     try {
       setError(null);
       
-      // Check camera permission
-      const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      setCameraPermission(permission.state);
-      
-      if (permission.state === 'denied') {
-        setError('Camera permission denied. Please allow camera access in your browser settings.');
+      // Request camera permission first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+        setCameraPermission('granted');
+      } catch (permErr) {
+        setError('Camera access denied. Please allow camera access and refresh the page.');
+        setCameraPermission('denied');
         return;
       }
 
       // Initialize code reader
       codeReader.current = new BrowserMultiFormatReader();
       
-      // Get available cameras
+      // Get available cameras after permission granted
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      const videoDevices = devices.filter(device => device.kind === 'videoinput' && device.deviceId);
       
       if (videoDevices.length === 0) {
         setError('No cameras found on this device.');
@@ -82,19 +84,20 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       setCameras(videoDevices);
       
-      // Auto-select camera (prefer back camera)
+      // Auto-select camera (prefer back camera on mobile, first available on desktop)
       const backCamera = videoDevices.find(device => 
         device.label.toLowerCase().includes('back') || 
         device.label.toLowerCase().includes('rear') ||
         device.label.toLowerCase().includes('environment')
       );
       
-      const selectedCamera = backCamera || videoDevices[videoDevices.length - 1] || videoDevices[0];
+      // For PC, usually the first camera is the default webcam
+      const selectedCamera = backCamera || videoDevices[0];
       setSelectedCameraId(selectedCamera.deviceId);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Camera initialization error:', err);
-      setError('Failed to initialize camera. Please ensure camera permissions are granted.');
+      setError(`Camera initialization failed: ${err?.message || 'Unknown error'}. Please check camera permissions.`);
     }
   };
 
@@ -113,9 +116,29 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Stop any existing streams
       if (currentStream.current) {
         currentStream.current.getTracks().forEach(track => track.stop());
+        currentStream.current = null;
       }
 
-      // Start new scanning session
+      // Create new code reader instance for each scan
+      codeReader.current = new BrowserMultiFormatReader();
+
+      // Test camera access first
+      const constraints = {
+        video: {
+          deviceId: selectedCameraId ? { exact: selectedCameraId } : undefined,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      // Start decoding from the stream
       await codeReader.current.decodeFromVideoDevice(
         selectedCameraId,
         videoRef.current,
@@ -125,20 +148,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
             onScan(result.getText());
             handleClose();
           }
-          if (error && !(error instanceof Error)) {
-            // Ignore frame decode errors, they're normal
-          }
+          // Ignore decode errors - they're expected during scanning
         }
       );
 
-      // Store the current stream for cleanup
-      if (videoRef.current.srcObject instanceof MediaStream) {
-        currentStream.current = videoRef.current.srcObject;
-      }
-
-    } catch (err) {
+    } catch (err: any) {
       console.error('Scanning error:', err);
-      setError('Failed to start camera. Please try selecting a different camera.');
+      setError(`Camera failed to start: ${err?.name === 'NotAllowedError' ? 'Permission denied' : err?.message || 'Unknown error'}. Try refreshing the page.`);
       setIsScanning(false);
     }
   };
