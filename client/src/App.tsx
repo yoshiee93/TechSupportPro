@@ -11,7 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Tickets from "@/pages/tickets";
 import Clients from "@/pages/clients";
 import Devices from "@/pages/devices";
-import Parts from "@/pages/parts";
+
 import Inventory from "@/pages/inventory";
 import Billing from "@/pages/billing";
 import Sales from "@/pages/sales";
@@ -31,7 +31,7 @@ function AuthenticatedApp() {
             <Route path="/tickets" component={Tickets} />
             <Route path="/clients" component={Clients} />
             <Route path="/devices" component={Devices} />
-            <Route path="/parts" component={Parts} />
+
             <Route path="/inventory" component={Inventory} />
             <Route path="/billing" component={Billing} />
             <Route path="/sales" component={Sales} />

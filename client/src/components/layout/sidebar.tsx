@@ -39,12 +39,7 @@ export default function Sidebar() {
       icon: Users, 
       badge: clients.length || 0 
     },
-    { 
-      name: "Parts & Orders", 
-      href: "/parts", 
-      icon: Package, 
-      badge: stats?.pendingParts || 0 
-    },
+
     { 
       name: "Inventory", 
       href: "/inventory", 
