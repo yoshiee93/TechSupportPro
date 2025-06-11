@@ -13,6 +13,8 @@ import Clients from "@/pages/clients";
 import Devices from "@/pages/devices";
 import Parts from "@/pages/parts";
 import Inventory from "@/pages/inventory";
+import Billing from "@/pages/billing";
+import Sales from "@/pages/sales";
 import Admin from "@/pages/admin";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -31,6 +33,8 @@ function AuthenticatedApp() {
             <Route path="/devices" component={Devices} />
             <Route path="/parts" component={Parts} />
             <Route path="/inventory" component={Inventory} />
+            <Route path="/billing" component={Billing} />
+            <Route path="/sales" component={Sales} />
             <Route path="/admin" component={Admin} />
             <Route component={NotFound} />
           </Switch>

@@ -7,6 +7,7 @@ import { registerTicketingRoutes } from "./modules/ticketing/routes";
 import { registerInventoryRoutes } from "./modules/inventory/routes";
 import { registerOrderingRoutes } from "./modules/ordering/routes";
 import { registerAttachmentRoutes } from "./modules/attachments/routes";
+import { registerBillingRoutes } from "./modules/billing/routes";
 import { errorHandler } from "./shared/middleware/error-handler";
 import { setupWebSocket } from "./websocket";
 
@@ -21,6 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerInventoryRoutes(app);
   registerOrderingRoutes(app);
   registerAttachmentRoutes(app);
+  registerBillingRoutes(app);
 
   // Error handling middleware (must be last)
   app.use(errorHandler);
