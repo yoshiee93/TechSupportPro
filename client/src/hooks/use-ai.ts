@@ -30,10 +30,7 @@ export function useAnalyzeTicket() {
       issueDescription: string;
       customerComplaints?: string[];
     }): Promise<TicketAnalysis> => {
-      const response = await apiRequest("/api/ai/analyze-ticket", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ai/analyze-ticket", data);
       return response.json();
     },
   });
@@ -47,10 +44,7 @@ export function useGenerateRepairSuggestions() {
       diagnosedIssue: string;
       availableParts?: string[];
     }): Promise<RepairSuggestion> => {
-      const response = await apiRequest("/api/ai/repair-suggestions", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ai/repair-suggestions", data);
       return response.json();
     },
   });
@@ -63,10 +57,7 @@ export function useSuggestParts() {
       deviceModel: string;
       symptoms: string[];
     }): Promise<{ parts: string[] }> => {
-      const response = await apiRequest("/api/ai/suggest-parts", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ai/suggest-parts", data);
       return response.json();
     },
   });
@@ -77,10 +68,7 @@ export function usePrioritizeTickets() {
     mutationFn: async (data: {
       ticketIds: number[];
     }): Promise<{ priorityAdjustments: Array<{ ticketId: number; suggestedPriority: string; reason: string }> }> => {
-      const response = await apiRequest("/api/ai/prioritize-tickets", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ai/prioritize-tickets", data);
       return response.json();
     },
   });
