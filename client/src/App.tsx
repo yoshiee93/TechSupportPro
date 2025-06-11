@@ -18,6 +18,7 @@ import Sales from "@/pages/sales";
 import Admin from "@/pages/admin";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import MobileHeader from "@/components/layout/mobile-header";
 
 function AuthenticatedApp() {
   return (
@@ -25,13 +26,13 @@ function AuthenticatedApp() {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
+        <MobileHeader />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-3 sm:p-6">
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/tickets" component={Tickets} />
             <Route path="/clients" component={Clients} />
             <Route path="/devices" component={Devices} />
-
             <Route path="/inventory" component={Inventory} />
             <Route path="/billing" component={Billing} />
             <Route path="/sales" component={Sales} />

@@ -16,7 +16,7 @@ export default function Header() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
+    <header className="hidden md:block bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Mobile Menu Button + Logo */}
         <div className="flex items-center space-x-3">
