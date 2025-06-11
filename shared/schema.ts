@@ -97,6 +97,20 @@ export const activityLogs = pgTable("activity_logs", {
   createdBy: text("created_by").notNull(),
 });
 
+export const timeLogs = pgTable("time_logs", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // in minutes
+  description: text("description"),
+  isActive: boolean("is_active").default(false),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const repairNotes = pgTable("repair_notes", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
@@ -126,20 +140,7 @@ export const reminders = pgTable("reminders", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const timeLogs = pgTable("time_logs", {
-  id: serial("id").primaryKey(),
-  ticketId: integer("ticket_id").notNull().references(() => tickets.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  technicianName: text("technician_name").notNull(),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time"),
-  duration: integer("duration"), // Duration in seconds
-  description: text("description"), // What was worked on during this time
-  billable: boolean("billable").default(true),
-  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }), // Rate per hour
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+
 
 export const attachments = pgTable("attachments", {
   id: serial("id").primaryKey(),

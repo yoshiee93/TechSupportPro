@@ -1,0 +1,148 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  POSTGRES_VERSION: '15'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: techfix_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Run type checking
+      run: npm run type-check
+
+    - name: Run database migrations
+      run: npm run db:migrate
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/techfix_test
+
+    - name: Run tests
+      run: npm test
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/techfix_test
+        NODE_ENV: test
+
+    - name: Build application
+      run: npm run build
+
+  deploy-staging:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    environment:
+      name: staging
+      url: https://techfix-staging.replit.app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run database migrations
+      run: npm run db:migrate
+      env:
+        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+    - name: Deploy to staging
+      run: echo "Deploy to staging server"
+      # Add actual deployment commands here
+
+  deploy-production:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    environment:
+      name: production
+      url: https://techfix.replit.app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run database migrations
+      run: npm run db:migrate
+      env:
+        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+    - name: Deploy to production
+      run: echo "Deploy to production server"
+      # Add actual deployment commands here
+
+    - name: Create backup
+      run: npm run backup:create
+      env:
+        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        BACKUP_STORAGE_URL: ${{ secrets.BACKUP_STORAGE_URL }}
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run security audit
+      run: npm audit --audit-level high
+
+    - name: Check for vulnerabilities
+      run: npm audit --production
