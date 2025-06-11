@@ -271,15 +271,13 @@ export const lowStockAlerts = pgTable("low_stock_alerts", {
 export const billableItems = pgTable("billable_items", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
-  type: text("type").notNull(), // labor, parts, service
+  partId: integer("part_id").references(() => parts.id), // nullable for labor items
+  itemType: text("item_type").notNull(), // part, labor
   description: text("description").notNull(),
   quantity: decimal("quantity", { precision: 10, scale: 2 }).default('1.00'),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default('10.00'), // Default 10%
-  taxInclusive: boolean("tax_inclusive").default(false),
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  billingStatus: text("billing_status").notNull().default('pending'), // pending, billed, void
-  billedDate: timestamp("billed_date"),
+  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
+  invoiceId: integer("invoice_id"), // nullable until invoiced
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

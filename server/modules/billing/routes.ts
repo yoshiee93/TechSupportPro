@@ -198,6 +198,54 @@ router.delete("/sale-items/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Get billable items for a specific ticket
+router.get("/billable-items/ticket/:ticketId", requireAuth, async (req, res) => {
+  try {
+    const ticketId = parseInt(req.params.ticketId);
+    const items = await storage.getBillableItemsByTicket(ticketId);
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching billable items:", error);
+    res.status(500).json({ error: "Failed to fetch billable items" });
+  }
+});
+
+// Add billable item to ticket
+router.post("/billable-items", requireAuth, async (req, res) => {
+  try {
+    const itemData = req.body;
+    const item = await storage.createBillableItem(itemData);
+    res.json(item);
+  } catch (error) {
+    console.error("Error creating billable item:", error);
+    res.status(500).json({ error: "Failed to create billable item" });
+  }
+});
+
+// Delete billable item
+router.delete("/billable-items/:id", requireAuth, async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.id);
+    await storage.deleteBillableItem(itemId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting billable item:", error);
+    res.status(500).json({ error: "Failed to delete billable item" });
+  }
+});
+
+// Generate invoice for ticket
+router.post("/invoices/generate/:ticketId", requireAuth, async (req, res) => {
+  try {
+    const ticketId = parseInt(req.params.ticketId);
+    const invoice = await storage.generateInvoiceForTicket(ticketId);
+    res.json({ invoice });
+  } catch (error) {
+    console.error("Error generating invoice:", error);
+    res.status(500).json({ error: "Failed to generate invoice" });
+  }
+});
+
 export function registerBillingRoutes(app: Express) {
   app.use("/api", router);
 }

@@ -152,11 +152,13 @@ export interface IStorage {
   // Phase 3.5: Billing & Sales
   // Billable Items
   getBillableItems(ticketId?: number): Promise<BillableItemWithTicket[]>;
+  getBillableItemsByTicket(ticketId: number): Promise<BillableItemWithTicket[]>;
   getUnbilledItems(): Promise<BillableItemWithTicket[]>;
   createBillableItem(item: InsertBillableItem): Promise<BillableItem>;
   updateBillableItem(id: number, item: Partial<InsertBillableItem>): Promise<BillableItem>;
   markItemsAsBilled(itemIds: number[]): Promise<void>;
   deleteBillableItem(id: number): Promise<void>;
+  generateInvoiceForTicket(ticketId: number): Promise<any>;
 
   // Sales Transactions
   getSalesTransactions(): Promise<SalesTransactionWithRelations[]>;
@@ -1229,6 +1231,45 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBillableItem(id: number): Promise<void> {
     await db.delete(billableItems).where(eq(billableItems.id, id));
+  }
+
+  async getBillableItemsByTicket(ticketId: number): Promise<BillableItemWithTicket[]> {
+    return this.getBillableItems(ticketId);
+  }
+
+  async generateInvoiceForTicket(ticketId: number): Promise<any> {
+    // Get all unbilled items for this ticket
+    const items = await db.select()
+      .from(billableItems)
+      .where(and(eq(billableItems.ticketId, ticketId), eq(billableItems.billingStatus, 'pending')));
+    
+    if (items.length === 0) {
+      throw new Error('No unbilled items found for this ticket');
+    }
+
+    // Calculate totals
+    const subtotal = items.reduce((sum, item) => sum + parseFloat(item.totalAmount || '0'), 0);
+    const taxAmount = subtotal * 0.1; // 10% tax
+    const totalAmount = subtotal + taxAmount;
+
+    // Mark items as billed
+    await db.update(billableItems)
+      .set({ 
+        billingStatus: 'billed', 
+        billedDate: new Date() 
+      })
+      .where(and(eq(billableItems.ticketId, ticketId), eq(billableItems.billingStatus, 'pending')));
+
+    // Return invoice data (in real implementation, this would create an actual invoice record)
+    return {
+      invoiceNumber: `INV-${ticketId}-${Date.now()}`,
+      ticketId,
+      items,
+      subtotal,
+      taxAmount,
+      totalAmount,
+      generatedAt: new Date()
+    };
   }
 
   // Sales Transactions
