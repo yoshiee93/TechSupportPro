@@ -15,6 +15,7 @@ import TicketTimer from "@/components/timer/ticket-timer";
 import TimeLogsList from "@/components/timer/time-logs-list";
 import { PhotoUpload } from "@/components/attachment/photo-upload";
 import { PhotoGallery } from "@/components/attachment/photo-gallery";
+import { TicketBilling } from "@/components/tickets/ticket-billing";
 import MobileTickets from "@/components/mobile/mobile-tickets";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -361,10 +362,11 @@ export default function Tickets() {
 
               {/* Tabbed Content */}
               <Tabs defaultValue="notes" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="notes">Notes & Progress</TabsTrigger>
                   <TabsTrigger value="photos">Photos & Files</TabsTrigger>
                   <TabsTrigger value="time">Time Tracking</TabsTrigger>
+                  <TabsTrigger value="billing">Billing</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="notes" className="space-y-6">
@@ -418,6 +420,10 @@ export default function Tickets() {
                     <TicketTimer ticketId={selectedTicket.id} />
                     <TimeLogsList ticketId={selectedTicket.id} />
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="billing" className="space-y-6">
+                  <TicketBilling ticketId={selectedTicket.id} clientId={selectedTicket.clientId} />
                 </TabsContent>
               </Tabs>
             </div>
