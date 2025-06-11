@@ -46,7 +46,12 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
     return () => {
       if (codeReader.current) {
-        codeReader.current.reset();
+        // Use proper cleanup method instead of reset()
+        try {
+          codeReader.current.stopAsyncDecode();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
         codeReader.current = null;
       }
     };
