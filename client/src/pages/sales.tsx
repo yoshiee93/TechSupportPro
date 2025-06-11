@@ -278,6 +278,47 @@ export default function SalesPage() {
 
                 <FormField
                   control={itemForm.control}
+                  name="partId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Product</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          const partId = value ? parseInt(value) : null;
+                          field.onChange(partId);
+                          
+                          if (partId) {
+                            const part = parts.find((p: any) => p.id === partId);
+                            if (part) {
+                              itemForm.setValue('description', part.name);
+                              itemForm.setValue('unitPrice', part.sellingPrice || part.costPrice || '0.00');
+                            }
+                          }
+                        }}
+                        value={field.value?.toString() || ''}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a product or scan barcode" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Manual Entry</SelectItem>
+                          {parts.map((part: any) => (
+                            <SelectItem key={part.id} value={part.id.toString()}>
+                              {part.name} - ${part.sellingPrice || part.costPrice || '0.00'}
+                              {part.quantityInStock <= 0 && ' (Out of Stock)'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={itemForm.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
