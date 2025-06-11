@@ -44,54 +44,10 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
 
       console.log('Attempting to request camera permission...');
       
-      // Get device list first
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log('Available cameras:', videoDevices.map(d => ({ label: d.label, deviceId: d.deviceId })));
-
-      // Try to find a rear camera (without "exact" constraint)
-      let rearCamera = videoDevices.find(d => 
-        d.label.toLowerCase().includes('back') || 
-        d.label.toLowerCase().includes('rear') ||
-        d.label.toLowerCase().includes('main')
-      );
-
-      // Fallback to first available camera
-      if (!rearCamera && videoDevices.length > 0) {
-        rearCamera = videoDevices[0];
-      }
-
-      // Get basic camera stream first
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: rearCamera ? { deviceId: rearCamera.deviceId } : { facingMode: "environment" }
+      // Try basic video access first
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true 
       });
-
-      console.log(`Using camera: ${rearCamera?.label || 'default environment camera'}`);
-
-      // Now try to apply zoom after getting the stream
-      const track = stream.getVideoTracks()[0];
-      if (track) {
-        const capabilities = track.getCapabilities();
-        const settings = track.getSettings();
-        
-        console.log('Camera capabilities:', capabilities);
-        console.log('Current settings:', settings);
-
-        // Try to apply 2x zoom if supported (better than 0.6x wide-angle)
-        if ('zoom' in capabilities && capabilities.zoom) {
-          try {
-            const targetZoom = Math.min(capabilities.zoom.max || 2.0, 2.0);
-            await track.applyConstraints({ 
-              advanced: [{ zoom: targetZoom }] 
-            });
-            console.log(`Applied ${targetZoom}x zoom successfully`);
-          } catch (zoomErr) {
-            console.log('Zoom constraint failed:', zoomErr);
-          }
-        } else {
-          console.log('Zoom not supported on this camera');
-        }
-      }
       
       setHasPermission(true);
       setError(null);
@@ -156,8 +112,9 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
         }
       }
       
-      // Method 2: Restart camera with better lens selection
-      console.log('Attempting camera stream restart with lens optimization...');
+      // Method 2: Restart camera stream for Samsung phones
+      console.log('Attempting camera stream restart for focus...');
+      const currentConstraints = videoTrack.getConstraints();
       
       // Stop current track
       videoTrack.stop();
@@ -165,27 +122,13 @@ export default function BarcodeScanner({ isOpen, onClose, onScan, title = "Scan 
       // Wait briefly
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Try to get main camera lens (1x zoom) for better focus
-      let newStream;
-      try {
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            zoom: { ideal: 1.0 }
-          } as any
-        });
-        console.log('Restarted with main camera lens');
-      } catch (err) {
-        // Fallback to basic camera
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment"
-          }
-        });
-        console.log('Restarted with basic camera');
-      }
+      // Request new stream with same constraints
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          ...currentConstraints,
+          facingMode: "environment"
+        }
+      });
       
       // Replace video source
       if (videoRef.current) {
