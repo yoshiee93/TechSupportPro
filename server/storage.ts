@@ -340,23 +340,47 @@ export class DatabaseStorage implements IStorage {
 
   // Tickets
   async getTickets(): Promise<TicketWithRelations[]> {
-    return await db.query.tickets.findMany({
-      with: {
-        client: true,
-        device: true,
-        partsOrders: true,
-        activityLogs: {
-          orderBy: [desc(activityLogs.createdAt)],
+    try {
+      return await db.query.tickets.findMany({
+        with: {
+          client: true,
+          device: true,
+          partsOrders: true,
+          activityLogs: {
+            orderBy: [desc(activityLogs.createdAt)],
+          },
+          repairNotes: {
+            orderBy: [desc(repairNotes.createdAt)],
+          },
+          timeLogs: {
+            orderBy: [desc(timeLogs.createdAt)],
+          },
         },
-        repairNotes: {
-          orderBy: [desc(repairNotes.createdAt)],
-        },
-        timeLogs: {
-          orderBy: [desc(timeLogs.createdAt)],
-        },
-      },
-      orderBy: [desc(tickets.createdAt)],
-    });
+        orderBy: [desc(tickets.createdAt)],
+      });
+    } catch (error) {
+      console.error("Database error in getTickets:", error);
+      // Fallback to basic query without relations if there's a schema mismatch
+      const basicTickets = await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+      const ticketsWithRelations: TicketWithRelations[] = [];
+      
+      for (const ticket of basicTickets) {
+        const [client] = await db.select().from(clients).where(eq(clients.id, ticket.clientId));
+        const [device] = await db.select().from(devices).where(eq(devices.id, ticket.deviceId));
+        
+        ticketsWithRelations.push({
+          ...ticket,
+          client,
+          device,
+          partsOrders: [],
+          activityLogs: [],
+          repairNotes: [],
+          timeLogs: [],
+        });
+      }
+      
+      return ticketsWithRelations;
+    }
   }
 
   async getTicket(id: number): Promise<TicketWithRelations | undefined> {

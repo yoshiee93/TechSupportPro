@@ -101,14 +101,17 @@ export const timeLogs = pgTable("time_logs", {
   id: serial("id").primaryKey(),
   ticketId: integer("ticket_id").notNull().references(() => tickets.id),
   userId: varchar("user_id").notNull().references(() => users.id),
+  technicianName: text("technician_name").notNull(),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
   duration: integer("duration"), // in minutes
   description: text("description"),
-  isActive: boolean("is_active").default(false),
+  billable: boolean("billable").default(true),
   hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  isActive: boolean("is_active").default(false),
   laborCost: decimal("labor_cost", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const repairNotes = pgTable("repair_notes", {
