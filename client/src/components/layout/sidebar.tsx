@@ -17,7 +17,8 @@ import {
   Warehouse,
   Receipt,
   ShoppingCart,
-  Brain
+  Brain,
+  Mic
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -59,6 +60,11 @@ export default function Sidebar() {
       name: "Invoices", 
       href: "/invoices", 
       icon: Receipt 
+    },
+    { 
+      name: "Voice Control", 
+      href: "/voice", 
+      icon: Mic 
     },
     { 
       name: "AI Insights", 
