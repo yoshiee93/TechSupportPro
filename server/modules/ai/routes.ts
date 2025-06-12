@@ -42,6 +42,23 @@ router.post("/analyze-ticket", async (req, res) => {
   }
 });
 
+// Parse voice transcript into structured ticket data
+router.post("/parse-voice-ticket", async (req, res) => {
+  try {
+    const { transcript } = req.body;
+
+    if (!transcript) {
+      return res.status(400).json({ error: "Voice transcript is required" });
+    }
+
+    const parsedData = await aiService.parseVoiceTicket(transcript);
+    res.json(parsedData);
+  } catch (error: any) {
+    console.error("Error parsing voice ticket:", error);
+    res.status(500).json({ error: error.message || "Failed to parse voice ticket" });
+  }
+});
+
 // Generate repair suggestions
 router.post("/repair-suggestions", async (req, res) => {
   try {

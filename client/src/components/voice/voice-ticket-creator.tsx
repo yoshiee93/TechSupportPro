@@ -57,9 +57,10 @@ export default function VoiceTicketCreator() {
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('/api/tickets', {
+      const response = await fetch('/api/tickets', {
         method: 'POST',
-        body: data,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
       return response.json();
     },
@@ -95,20 +96,22 @@ export default function VoiceTicketCreator() {
 
     try {
       // Send transcript to AI for parsing
-      const response = await apiRequest('/api/ai/parse-voice-ticket', {
+      const response = await fetch('/api/ai/parse-voice-ticket', {
         method: 'POST',
-        body: { transcript },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
       });
-
+      
+      const data = await response.json();
       setProcessingStep('Extracting ticket information...');
 
       // Update form with AI-parsed data
       setTicketData({
-        clientName: response.clientName || '',
-        deviceInfo: response.deviceInfo || '',
-        issueDescription: response.issueDescription || transcript,
-        priority: response.priority || 'medium',
-        symptoms: response.symptoms || []
+        clientName: data.clientName || '',
+        deviceInfo: data.deviceInfo || '',
+        issueDescription: data.issueDescription || transcript,
+        priority: data.priority || 'medium',
+        symptoms: data.symptoms || []
       });
 
       setProcessingStep('Ticket ready for review');

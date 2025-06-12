@@ -24,6 +24,55 @@ export interface RepairSuggestion {
 }
 
 export class OpenAIService {
+  async parseVoiceTicket(transcript: string): Promise<{
+    clientName: string;
+    deviceInfo: string;
+    issueDescription: string;
+    priority: string;
+    symptoms: string[];
+  }> {
+    try {
+      const prompt = `Parse this voice transcript from a repair shop technician and extract structured ticket information:
+
+Voice Transcript: "${transcript}"
+
+Extract the following information and respond with JSON:
+1. Client/customer name mentioned
+2. Device information (brand, model, type)
+3. Clear issue description
+4. Priority level (low/medium/high/urgent) based on urgency words
+5. List of symptoms or problems mentioned
+
+Respond with JSON in this exact format:
+{
+  "clientName": "extracted name or empty string",
+  "deviceInfo": "device brand and model",
+  "issueDescription": "clear description of the problem",
+  "priority": "low|medium|high|urgent",
+  "symptoms": ["symptom1", "symptom2"]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      return JSON.parse(content || '{}');
+    } catch (error) {
+      console.error("Error parsing voice ticket:", error);
+      // Return basic structure with transcript as description
+      return {
+        clientName: '',
+        deviceInfo: '',
+        issueDescription: transcript,
+        priority: 'medium',
+        symptoms: []
+      };
+    }
+  }
+
   async analyzeTicket(
     deviceBrand: string,
     deviceModel: string,
