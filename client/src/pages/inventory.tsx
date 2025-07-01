@@ -274,6 +274,19 @@ export default function Inventory() {
                 <Scan className="w-4 h-4" />
               </Button>
             </div>
+            
+            {/* Temporary test button for debugging */}
+            <Button 
+              onClick={() => {
+                console.log('Test: Manually triggering barcode scan with test barcode');
+                handleBarcodeScan('9320422518244');
+              }}
+              variant="outline"
+              className="bg-red-100 hover:bg-red-200 text-red-800"
+            >
+              Test Form Prefill (Debug)
+            </Button>
+            </div>
           </div>
 
           {/* Low Stock Alerts */}
