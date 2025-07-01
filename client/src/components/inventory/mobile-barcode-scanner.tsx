@@ -74,6 +74,7 @@ export default function MobileBarcodeScanner({
       const result = await response.json();
       
       if (result.success && result.barcode) {
+        console.log('Scanner: Barcode detected successfully:', result.barcode);
         setSuccess(`Barcode detected: ${result.barcode}`);
         toast({
           title: "Barcode Scanned Successfully",
@@ -81,6 +82,7 @@ export default function MobileBarcodeScanner({
         });
         
         // Pass result to parent component
+        console.log('Scanner: Calling onScan with barcode:', result.barcode);
         onScan(result.barcode);
         
         // Auto-close after successful scan

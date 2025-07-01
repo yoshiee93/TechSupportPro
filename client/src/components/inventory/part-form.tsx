@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,33 +53,68 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
     queryKey: ["/api/inventory/categories"],
   });
 
+  const defaultValues = {
+    sku: "",
+    name: "",
+    description: "",
+    categoryId: undefined,
+    supplierId: undefined,
+    supplierPartNumber: "",
+    manufacturer: "",
+    manufacturerPartNumber: "",
+    unitCost: "0.00",
+    sellingPrice: "0.00",
+    markup: "0.00",
+    quantityOnHand: 0,
+    reorderPoint: 0,
+    reorderQuantity: 0,
+    maxStockLevel: undefined,
+    location: "",
+    weight: undefined,
+    dimensions: "",
+    warrantyPeriod: undefined,
+    isActive: true,
+    isStocked: true,
+    ...initialData,
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      sku: "",
-      name: "",
-      description: "",
-      categoryId: undefined,
-      supplierId: undefined,
-      supplierPartNumber: "",
-      manufacturer: "",
-      manufacturerPartNumber: "",
-      unitCost: "0.00",
-      sellingPrice: "0.00",
-      markup: "0.00",
-      quantityOnHand: 0,
-      reorderPoint: 0,
-      reorderQuantity: 0,
-      maxStockLevel: undefined,
-      location: "",
-      weight: undefined,
-      dimensions: "",
-      warrantyPeriod: undefined,
-      isActive: true,
-      isStocked: true,
-      ...initialData,
-    },
+    defaultValues,
   });
+
+  // Reset form when initialData changes (e.g., when barcode is scanned)
+  useEffect(() => {
+    if (initialData) {
+      console.log('PartForm: Initial data changed:', initialData);
+      const newValues = {
+        sku: "",
+        name: "",
+        description: "",
+        categoryId: undefined,
+        supplierId: undefined,
+        supplierPartNumber: "",
+        manufacturer: "",
+        manufacturerPartNumber: "",
+        unitCost: "0.00",
+        sellingPrice: "0.00",
+        markup: "0.00",
+        quantityOnHand: 0,
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        maxStockLevel: undefined,
+        location: "",
+        weight: undefined,
+        dimensions: "",
+        warrantyPeriod: undefined,
+        isActive: true,
+        isStocked: true,
+        ...initialData,
+      };
+      console.log('PartForm: Resetting form with values:', newValues);
+      form.reset(newValues);
+    }
+  }, [initialData, form]);
 
   const createPartMutation = useMutation({
     mutationFn: async (data: FormValues) => {

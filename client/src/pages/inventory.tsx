@@ -92,15 +92,18 @@ export default function Inventory() {
     const cleanedValue = scannedValue.trim();
     
     // Set the scanned barcode for form prefilling
+    console.log('Setting scannedBarcode state to:', cleanedValue);
     setScannedBarcode(cleanedValue);
     
     // Also set search query to show matching parts
+    console.log('Setting search query to:', cleanedValue);
     setSearchQuery(cleanedValue);
     
     // Open the part form dialog to prefill with scanned barcode
+    console.log('Opening part dialog for barcode:', cleanedValue);
     setPartDialogOpen(true);
     
-    console.log('Form opened with scanned barcode:', cleanedValue);
+    console.log('Inventory: All states updated - barcode:', cleanedValue, 'dialog opening');
   };
 
   return (
