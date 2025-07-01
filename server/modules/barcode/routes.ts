@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import { simpleBarcodeService } from "./barcode-service-simple";
+import { openAIBarcodeService } from "./barcode-service-openai";
 
 const router = Router();
 
@@ -46,7 +46,7 @@ router.post('/scan-barcode', upload.single('image'), async (req, res) => {
     });
 
     // Process the uploaded image
-    const result = await simpleBarcodeService.processImageFile(req.file.path);
+    const result = await openAIBarcodeService.processImageFile(req.file.path);
     
     // Return result
     res.json(result);
