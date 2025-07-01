@@ -1,4 +1,4 @@
-import { BrowserMultiFormatReader } from '@zxing/library';
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
 import sharp from 'sharp';
 import fs from 'fs/promises';
 
@@ -73,38 +73,115 @@ export class BarcodeService {
     try {
       console.log('Attempting to decode barcode from:', imagePath);
       
-      // Convert image to base64 data URL for ZXing
+      // Try multiple approaches for better success rate
+      const approaches = [
+        () => this.tryDecodeFromFile(imagePath),
+        () => this.tryDecodeFromBase64(imagePath),
+        () => this.tryDecodeWithCanvas(imagePath)
+      ];
+
+      for (let i = 0; i < approaches.length; i++) {
+        try {
+          console.log(`Trying decode approach ${i + 1}...`);
+          const result = await approaches[i]();
+          
+          if (result.success) {
+            console.log(`Success with approach ${i + 1}:`, result);
+            return result;
+          }
+        } catch (error) {
+          console.log(`Approach ${i + 1} failed:`, error.message);
+          continue;
+        }
+      }
+
+      return {
+        success: false,
+        error: 'Could not detect barcode. Please ensure the barcode is clear, well-lit, and properly framed in the image.'
+      };
+    } catch (error) {
+      console.error('Barcode decode error:', error);
+      return {
+        success: false,
+        error: 'Failed to process barcode image'
+      };
+    }
+  }
+
+  private async tryDecodeFromFile(imagePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
+    try {
+      // Try direct file path approach
+      const result = await this.codeReader.decodeFromImageUrl(imagePath);
+      
+      if (result) {
+        const barcodeText = result.getText().trim();
+        return {
+          success: true,
+          barcode: barcodeText
+        };
+      }
+      
+      return { success: false, error: 'No barcode found (file)' };
+    } catch (error) {
+      throw new Error(`File decode failed: ${error.message}`);
+    }
+  }
+
+  private async tryDecodeFromBase64(imagePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
+    try {
+      // Convert to base64 data URL
       const imageBuffer = await fs.readFile(imagePath);
       const base64 = imageBuffer.toString('base64');
       const mimeType = this.getMimeType(imagePath);
       const dataUrl = `data:${mimeType};base64,${base64}`;
       
-      // Decode using ZXing
       const result = await this.codeReader.decodeFromImage(undefined, dataUrl);
       
       if (result) {
         const barcodeText = result.getText().trim();
-        console.log('Barcode detected:', {
-          text: barcodeText,
-          format: result.getBarcodeFormat?.() || 'unknown'
-        });
-        
         return {
           success: true,
           barcode: barcodeText
         };
-      } else {
+      }
+      
+      return { success: false, error: 'No barcode found (base64)' };
+    } catch (error) {
+      throw new Error(`Base64 decode failed: ${error.message}`);
+    }
+  }
+
+  private async tryDecodeWithCanvas(imagePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
+    try {
+      // Create ImageData from buffer using sharp
+      const imageBuffer = await fs.readFile(imagePath);
+      const image = sharp(imageBuffer);
+      const { data, info } = await image
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      // Create mock ImageData object
+      const imageData = {
+        data: new Uint8ClampedArray(data),
+        width: info.width,
+        height: info.height
+      };
+
+      // Try to decode from ImageData
+      const result = await this.codeReader.decodeFromImageData(imageData as any);
+      
+      if (result) {
+        const barcodeText = result.getText().trim();
         return {
-          success: false,
-          error: 'No barcode detected in image'
+          success: true,
+          barcode: barcodeText
         };
       }
+      
+      return { success: false, error: 'No barcode found (canvas)' };
     } catch (error) {
-      console.error('Barcode decode error:', error);
-      return {
-        success: false,
-        error: 'Could not detect barcode. Please ensure the barcode is clear, well-lit, and properly framed in the image.'
-      };
+      throw new Error(`Canvas decode failed: ${error.message}`);
     }
   }
 

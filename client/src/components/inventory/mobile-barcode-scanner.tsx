@@ -202,14 +202,53 @@ export default function MobileBarcodeScanner({
             </Alert>
           )}
 
-          {/* Error State */}
+          {/* Error State with Manual Input Option */}
           {error && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                {error}
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-3">
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {error}
+                </AlertDescription>
+              </Alert>
+              
+              {/* Manual Input Fallback */}
+              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <p className="text-sm font-medium text-gray-700 mb-2">Manual Entry</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter barcode manually..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const value = (e.target as HTMLInputElement).value.trim();
+                        if (value) {
+                          onScan(value);
+                          handleClose();
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
+                      const value = input?.value.trim();
+                      if (value) {
+                        onScan(value);
+                        handleClose();
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Type or paste the barcode number and press Enter
+                </p>
+              </div>
+            </div>
           )}
 
           {/* Action Buttons */}
