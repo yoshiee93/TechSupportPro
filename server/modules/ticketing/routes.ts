@@ -53,9 +53,7 @@ export function registerTicketingRoutes(app: Express) {
   // Create new ticket
   app.post("/api/tickets", requireAuth, async (req, res) => {
     try {
-      console.log("Creating ticket with data:", req.body);
       const ticketData = insertTicketSchema.parse(req.body);
-      console.log("Validated ticket data:", ticketData);
       const ticket = await storage.createTicket(ticketData);
       
       // Notify WebSocket clients about new ticket
@@ -68,7 +66,7 @@ export function registerTicketingRoutes(app: Express) {
     } catch (error) {
       console.error("Ticket creation error:", error);
       if (error instanceof z.ZodError) {
-        console.error("Validation errors:", error.errors);
+        // Log validation errors for debugging
         return res.status(400).json({ message: "Invalid ticket data", errors: error.errors });
       }
       const errorMessage = error instanceof Error ? error.message : "Unknown error";

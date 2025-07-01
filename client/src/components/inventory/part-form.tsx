@@ -167,7 +167,11 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Part description" {...field} />
+                <Textarea 
+                  placeholder="Part description" 
+                  {...field} 
+                  value={field.value || ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
