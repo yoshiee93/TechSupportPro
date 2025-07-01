@@ -83,12 +83,18 @@ export default function MobileBarcodeScanner({
         
         // Pass result to parent component
         console.log('Scanner: Calling onScan with barcode:', result.barcode);
-        onScan(result.barcode);
+        console.log('Scanner: onScan function type:', typeof onScan);
+        try {
+          onScan(result.barcode);
+          console.log('Scanner: onScan called successfully');
+        } catch (error) {
+          console.error('Scanner: Error calling onScan:', error);
+        }
         
-        // Auto-close after successful scan
-        setTimeout(() => {
-          handleClose();
-        }, 1500);
+        // Auto-close after successful scan (temporarily disabled for debugging)
+        // setTimeout(() => {
+        //   handleClose();
+        // }, 1500);
       } else {
         setError(result.error || 'No barcode detected in image. Please try again with a clearer photo.');
       }
