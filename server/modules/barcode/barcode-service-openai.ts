@@ -146,7 +146,7 @@ Focus on accuracy - only return codes you can clearly read.`
   }
 
   private async optimizeImage(inputPath: string): Promise<string> {
-    const outputPath = inputPath.replace(/\.[^/.]+$/, '_ai_optimized.jpg');
+    const outputPath = inputPath + '_ai_optimized.jpg';
     
     try {
       // Optimize for AI vision processing
