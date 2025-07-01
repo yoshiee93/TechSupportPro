@@ -78,6 +78,8 @@ export default function Inventory() {
     }
   };
 
+  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+
   const handleBarcodeScan = (scannedValue: string) => {
     console.log('Inventory page received barcode scan:', {
       originalValue: scannedValue,
@@ -88,8 +90,17 @@ export default function Inventory() {
     });
     
     const cleanedValue = scannedValue.trim();
+    
+    // Set the scanned barcode for form prefilling
+    setScannedBarcode(cleanedValue);
+    
+    // Also set search query to show matching parts
     setSearchQuery(cleanedValue);
-    console.log('Search query set to:', cleanedValue);
+    
+    // Open the part form dialog to prefill with scanned barcode
+    setPartDialogOpen(true);
+    
+    console.log('Form opened with scanned barcode:', cleanedValue);
   };
 
   return (
@@ -98,7 +109,12 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
         <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
         <div className="flex space-x-2">
-          <Dialog open={partDialogOpen} onOpenChange={setPartDialogOpen}>
+          <Dialog open={partDialogOpen} onOpenChange={(open) => {
+            setPartDialogOpen(open);
+            if (!open) {
+              setScannedBarcode(null); // Clear scanned barcode when dialog closes
+            }
+          }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -107,9 +123,17 @@ export default function Inventory() {
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add New Part</DialogTitle>
+                <DialogTitle>
+                  {scannedBarcode ? "Add Scanned Part" : "Add New Part"}
+                </DialogTitle>
               </DialogHeader>
-              <PartForm onSuccess={() => setPartDialogOpen(false)} />
+              <PartForm 
+                onSuccess={() => {
+                  setPartDialogOpen(false);
+                  setScannedBarcode(null); // Clear scanned barcode after form submission
+                }} 
+                initialData={scannedBarcode ? { sku: scannedBarcode } : undefined}
+              />
             </DialogContent>
           </Dialog>
           
