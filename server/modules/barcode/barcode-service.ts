@@ -1,4 +1,4 @@
-import { BrowserMultiFormatReader, Result } from '@zxing/library';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import sharp from 'sharp';
 import fs from 'fs/promises';
 
@@ -11,25 +11,32 @@ export class BarcodeService {
 
   async processImageFile(filePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
     try {
-      // Optimize image for barcode detection
-      const optimizedImagePath = await this.optimizeImage(filePath);
+      console.log('Processing barcode image:', filePath);
       
-      // Try to decode barcode from optimized image
-      const result = await this.decodeBarcode(optimizedImagePath);
+      // Try to decode barcode from original image first
+      let result = await this.decodeBarcode(filePath);
       
-      // Clean up temporary files
-      await this.cleanup([filePath, optimizedImagePath]);
+      // If that fails, try with image optimization
+      if (!result.success) {
+        console.log('Trying with optimized image...');
+        const optimizedPath = await this.optimizeImage(filePath);
+        result = await this.decodeBarcode(optimizedPath);
+        
+        // Clean up optimized image
+        if (optimizedPath !== filePath) {
+          await this.cleanup([optimizedPath]);
+        }
+      }
+      
+      // Clean up original uploaded file
+      await this.cleanup([filePath]);
       
       return result;
     } catch (error) {
       console.error('Barcode processing error:', error);
       
       // Clean up on error
-      try {
-        await fs.unlink(filePath);
-      } catch (cleanupError) {
-        console.error('Cleanup error:', cleanupError);
-      }
+      await this.cleanup([filePath]);
       
       return {
         success: false,
@@ -64,18 +71,22 @@ export class BarcodeService {
 
   private async decodeBarcode(imagePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
     try {
-      // Read image buffer
-      const imageBuffer = await fs.readFile(imagePath);
+      console.log('Attempting to decode barcode from:', imagePath);
       
-      // Decode barcode using ZXing
-      const result = await this.codeReader.decodeFromImage(undefined, imagePath);
+      // Convert image to base64 data URL for ZXing
+      const imageBuffer = await fs.readFile(imagePath);
+      const base64 = imageBuffer.toString('base64');
+      const mimeType = this.getMimeType(imagePath);
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+      
+      // Decode using ZXing
+      const result = await this.codeReader.decodeFromImage(undefined, dataUrl);
       
       if (result) {
         const barcodeText = result.getText().trim();
         console.log('Barcode detected:', {
           text: barcodeText,
-          format: result.getBarcodeFormat(),
-          confidence: result.getResultMetadata()
+          format: result.getBarcodeFormat?.() || 'unknown'
         });
         
         return {
@@ -90,53 +101,27 @@ export class BarcodeService {
       }
     } catch (error) {
       console.error('Barcode decode error:', error);
-      
-      // Try different approaches for better detection
-      return await this.tryAlternativeDecoding(imagePath);
-    }
-  }
-
-  private async tryAlternativeDecoding(imagePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
-    try {
-      // Try with different image processing approaches
-      const variations = [
-        // Higher contrast
-        sharp(imagePath).normalize().modulate({ brightness: 1.2, contrast: 1.5 }),
-        // Different threshold
-        sharp(imagePath).threshold(128),
-        // Blur reduction
-        sharp(imagePath).sharpen({ sigma: 2 })
-      ];
-
-      for (let i = 0; i < variations.length; i++) {
-        try {
-          const tempPath = imagePath.replace(/\.[^/.]+$/, `_var${i}.png`);
-          await variations[i].png().toFile(tempPath);
-          
-          const result = await this.decodeBarcode(tempPath);
-          
-          // Clean up temp file
-          await fs.unlink(tempPath).catch(() => {});
-          
-          if (result.success) {
-            return result;
-          }
-        } catch (variationError) {
-          console.log(`Variation ${i} failed:`, variationError);
-          continue;
-        }
-      }
-
       return {
         success: false,
         error: 'Could not detect barcode. Please ensure the barcode is clear, well-lit, and properly framed in the image.'
       };
-    } catch (error) {
-      console.error('Alternative decoding error:', error);
-      return {
-        success: false,
-        error: 'Failed to process barcode image'
-      };
+    }
+  }
+
+  private getMimeType(filePath: string): string {
+    const ext = filePath.toLowerCase().split('.').pop();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/png';
     }
   }
 
@@ -144,6 +129,7 @@ export class BarcodeService {
     for (const filePath of filePaths) {
       try {
         await fs.unlink(filePath);
+        console.log('Cleaned up file:', filePath);
       } catch (error) {
         // Ignore cleanup errors
         console.log(`Could not delete ${filePath}:`, error);

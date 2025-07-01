@@ -25,7 +25,7 @@ import {
   Trash2,
   Scan
 } from "lucide-react";
-import BarcodeScanner from "@/components/inventory/barcode-scanner-fixed";
+import MobileBarcodeScanner from "@/components/inventory/mobile-barcode-scanner";
 
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -490,8 +490,8 @@ export default function Inventory() {
         </TabsContent>
       </Tabs>
 
-      {/* Barcode Scanner */}
-      <BarcodeScanner
+      {/* Mobile Barcode Scanner */}
+      <MobileBarcodeScanner
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleBarcodeScan}
