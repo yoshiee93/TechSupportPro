@@ -6,7 +6,7 @@ import { insertPartSchema } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import BarcodeScanner from "./barcode-scanner";
+import MobileBarcodeScanner from "./mobile-barcode-scanner";
 import {
   Form,
   FormControl,
@@ -412,7 +412,7 @@ export default function PartForm({ onSuccess, initialData }: PartFormProps) {
         </div>
       </form>
 
-      <BarcodeScanner
+      <MobileBarcodeScanner
         isOpen={scannerOpen}
         onClose={() => setScannerOpen(false)}
         onScan={handleBarcodeScan}

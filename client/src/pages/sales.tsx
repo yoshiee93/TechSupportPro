@@ -586,7 +586,7 @@ export default function SalesPage() {
         </Card>
       </div>
 
-      <BarcodeScanner
+      <MobileBarcodeScanner
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScan={handleBarcodeScanned}
