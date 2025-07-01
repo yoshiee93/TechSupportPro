@@ -13,16 +13,19 @@ export class OpenAIBarcodeService {
 
   async processImageFile(filePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
     try {
-      // console.log('Processing barcode image with OpenAI Vision:', filePath);
+      console.log('Processing barcode image with OpenAI Vision:', filePath);
       
       // Optimize image for better vision processing
       const optimizedPath = await this.optimizeImage(filePath);
+      console.log('Created AI-optimized image');
       
       // Use OpenAI Vision to detect barcode
       const result = await this.detectBarcodeWithVision(optimizedPath);
+      console.log('OpenAI Vision result:', result);
       
       // Clean up files
       await this.cleanup([filePath, optimizedPath]);
+      console.log('Cleaned up files');
       
       return result;
     } catch (error) {
@@ -43,7 +46,7 @@ export class OpenAIBarcodeService {
       const base64Image = imageBuffer.toString('base64');
       const mimeType = this.getMimeType(imagePath);
       
-      // console.log('Sending image to OpenAI Vision API for barcode detection...');
+      console.log('Sending image to OpenAI Vision API for barcode detection...');
       
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o",
@@ -79,6 +82,7 @@ Focus on accuracy - only return codes you can clearly read.`
       });
 
       const detectedText = response.choices[0]?.message?.content?.trim();
+      console.log('OpenAI Vision response:', detectedText);
       
       if (!detectedText) {
         return {
@@ -98,7 +102,7 @@ Focus on accuracy - only return codes you can clearly read.`
       const cleanBarcode = this.cleanBarcodeText(detectedText);
       
       if (cleanBarcode) {
-        // console.log('OpenAI detected barcode:', cleanBarcode);
+        console.log('OpenAI detected barcode:', cleanBarcode);
         return {
           success: true,
           barcode: cleanBarcode

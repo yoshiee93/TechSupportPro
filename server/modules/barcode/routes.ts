@@ -49,11 +49,11 @@ router.post('/scan-barcode', upload.single('image'), async (req, res) => {
     // Process the uploaded image
     const result = await openAIBarcodeService.processImageFile(req.file.path);
     
+    // Log result for debugging
+    console.log('Barcode processing result:', result);
+    
     // Return result
     res.json(result);
-    
-    // Log result for debugging
-    // console.log('Barcode processing result:', result);
     
   } catch (error: any) {
     console.error('Barcode scanning error:', error);
