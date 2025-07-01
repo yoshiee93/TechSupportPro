@@ -38,6 +38,7 @@ router.post('/scan-barcode', upload.single('image'), async (req, res) => {
       });
     }
 
+    // Log processing info for debugging
     console.log('Processing barcode image:', {
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -52,7 +53,7 @@ router.post('/scan-barcode', upload.single('image'), async (req, res) => {
     res.json(result);
     
     // Log result for debugging
-    console.log('Barcode processing result:', result);
+    // console.log('Barcode processing result:', result);
     
   } catch (error: any) {
     console.error('Barcode scanning error:', error);

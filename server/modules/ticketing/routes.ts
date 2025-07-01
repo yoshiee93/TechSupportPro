@@ -93,7 +93,7 @@ export function registerTicketingRoutes(app: Express) {
   app.delete("/api/tickets/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log("Deleting ticket with id:", id);
+      // console.log("Deleting ticket with id:", id);
       await storage.deleteTicket(id);
       res.status(204).send();
     } catch (error) {
@@ -130,8 +130,8 @@ export function registerTicketingRoutes(app: Express) {
       const ticketId = parseInt(req.params.id);
       const userId = (req as any).user?.id;
       
-      console.log("Creating repair note for ticket:", ticketId, "by user:", userId);
-      console.log("Request body:", req.body);
+      // console.log("Creating repair note for ticket:", ticketId, "by user:", userId);
+      // console.log("Request body:", req.body);
       
       const repairNoteData = insertRepairNoteSchema.parse({
         ...req.body,
@@ -139,10 +139,10 @@ export function registerTicketingRoutes(app: Express) {
         userId
       });
       
-      console.log("Parsed repair note data:", repairNoteData);
+      // console.log("Parsed repair note data:", repairNoteData);
       
       const repairNote = await storage.createRepairNote(repairNoteData);
-      console.log("Created repair note:", repairNote);
+      // console.log("Created repair note:", repairNote);
       
       res.status(201).json(repairNote);
     } catch (error) {
@@ -212,14 +212,14 @@ export function registerTicketingRoutes(app: Express) {
 
   app.post("/api/time-logs", requireAuth, async (req, res) => {
     try {
-      console.log("Creating time log with data:", JSON.stringify(req.body, null, 2));
-      console.log("User from request:", req.user);
+      // console.log("Creating time log with data:", JSON.stringify(req.body, null, 2));
+      // console.log("User from request:", req.user);
       
       const timeLogData = insertTimeLogSchema.parse(req.body);
-      console.log("Validated time log data:", JSON.stringify(timeLogData, null, 2));
+      // console.log("Validated time log data:", JSON.stringify(timeLogData, null, 2));
       
       const timeLog = await storage.createTimeLog(timeLogData);
-      console.log("Created time log:", JSON.stringify(timeLog, null, 2));
+      // console.log("Created time log:", JSON.stringify(timeLog, null, 2));
       
       // Notify WebSocket clients about timer start
       const wsManager = getWebSocketManager();
@@ -231,7 +231,7 @@ export function registerTicketingRoutes(app: Express) {
     } catch (error) {
       console.error("Time log creation error:", error);
       if (error instanceof z.ZodError) {
-        console.log("Zod validation errors:", JSON.stringify(error.errors, null, 2));
+        // console.log("Zod validation errors:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Invalid time log data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create time log", error: error instanceof Error ? error.message : String(error) });
@@ -271,14 +271,14 @@ export function registerTicketingRoutes(app: Express) {
 
   app.post("/api/time-logs/:id/stop", requireAuth, async (req, res) => {
     try {
-      console.log("Stopping time log ID:", req.params.id);
-      console.log("Stop request body:", req.body);
+      // console.log("Stopping time log ID:", req.params.id);
+      // console.log("Stop request body:", req.body);
       
       const id = parseInt(req.params.id);
       const { endTime } = req.body;
       const timeLog = await storage.stopTimeLog(id, endTime ? new Date(endTime) : undefined);
       
-      console.log("Stopped time log result:", JSON.stringify(timeLog, null, 2));
+      // console.log("Stopped time log result:", JSON.stringify(timeLog, null, 2));
       res.json(timeLog);
     } catch (error) {
       console.error("Stop time log error:", error);
@@ -288,14 +288,14 @@ export function registerTicketingRoutes(app: Express) {
 
   app.patch("/api/time-logs/:id/stop", requireAuth, async (req, res) => {
     try {
-      console.log("PATCH: Stopping time log ID:", req.params.id);
-      console.log("PATCH: Stop request body:", req.body);
+      // console.log("PATCH: Stopping time log ID:", req.params.id);
+      // console.log("PATCH: Stop request body:", req.body);
       
       const id = parseInt(req.params.id);
       const { endTime } = req.body;
       const timeLog = await storage.stopTimeLog(id, endTime ? new Date(endTime) : undefined);
       
-      console.log("PATCH: Stopped time log result:", JSON.stringify(timeLog, null, 2));
+      // console.log("PATCH: Stopped time log result:", JSON.stringify(timeLog, null, 2));
       res.json(timeLog);
     } catch (error) {
       console.error("PATCH: Stop time log error:", error);

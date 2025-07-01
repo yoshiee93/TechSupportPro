@@ -22,7 +22,7 @@ export class WebSocketManager {
   }
 
   private async handleConnection(ws: AuthenticatedWebSocket, request: any) {
-    console.log('WebSocket connection attempt');
+    // console.log('WebSocket connection attempt');
     
     try {
       // Extract token from query string or headers
@@ -30,7 +30,7 @@ export class WebSocketManager {
       const token = url.searchParams.get('token') || request.headers.authorization?.replace('Bearer ', '');
       
       if (!token) {
-        console.log('WebSocket: No token provided');
+        // console.log('WebSocket: No token provided');
         ws.close(1008, 'Authentication required');
         return;
       }
@@ -40,7 +40,7 @@ export class WebSocketManager {
       ws.userId = decoded.id || decoded.userId;
       ws.username = decoded.username || decoded.name;
 
-      console.log(`WebSocket authenticated: ${ws.username || 'Unknown'} (${ws.userId || 'Unknown'})`);
+      // console.log(`WebSocket authenticated: ${ws.username || 'Unknown'} (${ws.userId || 'Unknown'})`);
 
       // Add to clients map
       if (ws.userId) {
@@ -73,7 +73,7 @@ export class WebSocketManager {
       // Handle disconnection
       ws.on('close', () => {
         this.removeClient(ws);
-        console.log(`WebSocket disconnected: ${ws.username}`);
+        // console.log(`WebSocket disconnected: ${ws.username}`);
       });
 
       ws.on('error', (error) => {
@@ -88,7 +88,7 @@ export class WebSocketManager {
   }
 
   private handleMessage(ws: AuthenticatedWebSocket, message: any) {
-    console.log('WebSocket message:', message);
+    // console.log('WebSocket message:', message);
 
     switch (message.type) {
       case 'ping':
@@ -106,7 +106,7 @@ export class WebSocketManager {
         break;
 
       default:
-        console.log('Unknown message type:', message.type);
+        // console.log('Unknown message type:', message.type);
     }
   }
 

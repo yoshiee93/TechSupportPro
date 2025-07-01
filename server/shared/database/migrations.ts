@@ -15,9 +15,9 @@ export class MigrationManager {
 
   async runMigrations() {
     try {
-      console.log('🔄 Running database migrations...');
+      // console.log('🔄 Running database migrations...');
       await migrate(this.db, { migrationsFolder: './migrations' });
-      console.log('✅ Migrations completed successfully');
+      // console.log('✅ Migrations completed successfully');
     } catch (error) {
       console.error('❌ Migration failed:', error);
       throw error;
@@ -25,10 +25,10 @@ export class MigrationManager {
   }
 
   async rollback(steps = 1) {
-    console.log(`🔄 Rolling back ${steps} migration(s)...`);
+    // console.log(`🔄 Rolling back ${steps} migration(s)...`);
     // Implementation for rollback
     // This would require custom rollback scripts
-    console.log('⚠️  Manual rollback required - check backup files');
+    // console.log('⚠️  Manual rollback required - check backup files');
   }
 
   async getMigrationStatus() {
@@ -39,15 +39,15 @@ export class MigrationManager {
       );
       return result.rows;
     } catch (error) {
-      console.log('No migration history found');
+      // console.log('No migration history found');
       return [];
     }
   }
 
   async validateSchema() {
-    console.log('🔄 Validating database schema...');
+    // console.log('🔄 Validating database schema...');
     // Add schema validation logic
-    console.log('✅ Schema validation completed');
+    // console.log('✅ Schema validation completed');
   }
 
   async close() {
@@ -74,7 +74,7 @@ export async function createMigration(name: string) {
 `;
 
   await fs.writeFile(filepath, template);
-  console.log(`✅ Created migration file: ${filepath}`);
+  // console.log(`✅ Created migration file: ${filepath}`);
   
   return filepath;
 }

@@ -48,11 +48,11 @@ export class DatabaseManager {
   async testConnection() {
     try {
       await this.primaryPool.query('SELECT 1');
-      console.log('✅ Primary database connection successful');
+      // console.log('✅ Primary database connection successful');
       
       if (this.backupPool) {
         await this.backupPool.query('SELECT 1');
-        console.log('✅ Backup database connection successful');
+        // console.log('✅ Backup database connection successful');
       }
       
       return true;
@@ -67,7 +67,7 @@ export class DatabaseManager {
       throw new Error('Backup database not available');
     }
     
-    console.log('⚠️  Switching to backup database');
+    // console.log('⚠️  Switching to backup database');
     // In a real implementation, you'd update your storage layer
     // to use the backup database
     return this.backupDb;

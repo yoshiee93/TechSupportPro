@@ -30,7 +30,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
         hour12: true,
       });
 
-      console.log(`${formattedTime} [express] ${logLine}`);
+      // console.log(`${formattedTime} [express] ${logLine}`);
     }
   });
 

@@ -722,7 +722,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTimeLog(insertTimeLog: InsertTimeLog): Promise<TimeLog> {
-    console.log("Storage: Creating time log with data:", JSON.stringify(insertTimeLog, null, 2));
+    // console.log("Storage: Creating time log with data:", JSON.stringify(insertTimeLog, null, 2));
     
     try {
       // Ensure dates are properly converted
@@ -737,7 +737,7 @@ export class DatabaseStorage implements IStorage {
       
       const [timeLog] = await db.insert(timeLogs).values([timeLogData]).returning();
       
-      console.log("Storage: Successfully created time log:", JSON.stringify(timeLog, null, 2));
+      // console.log("Storage: Successfully created time log:", JSON.stringify(timeLog, null, 2));
       return timeLog;
     } catch (error) {
       console.error("Storage: Time log creation failed:", error);
@@ -770,7 +770,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async stopTimeLog(id: number, endTime?: Date): Promise<TimeLog> {
-    console.log("Storage: Stopping time log", { id, endTime });
+    // console.log("Storage: Stopping time log", { id, endTime });
     
     const stopTime = endTime || new Date();
     
@@ -781,10 +781,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Time log not found");
     }
     
-    console.log("Storage: Current log before stopping:", JSON.stringify(currentLog, null, 2));
+    // console.log("Storage: Current log before stopping:", JSON.stringify(currentLog, null, 2));
     
     const duration = Math.floor((stopTime.getTime() - new Date(currentLog.startTime).getTime()) / 1000);
-    console.log("Storage: Calculated duration:", duration, "seconds");
+    // console.log("Storage: Calculated duration:", duration, "seconds");
     
     const [updated] = await db
       .update(timeLogs)
@@ -796,7 +796,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(timeLogs.id, id))
       .returning();
     
-    console.log("Storage: Updated time log:", JSON.stringify(updated, null, 2));
+    // console.log("Storage: Updated time log:", JSON.stringify(updated, null, 2));
     return updated;
   }
 

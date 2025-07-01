@@ -40,10 +40,10 @@ export function registerAttachmentRoutes(app: Express) {
   // Upload image attachment
   app.post("/api/attachments/upload", requireAuth, upload.single('image'), async (req, res) => {
     try {
-      console.log("File upload request received");
-      console.log("User:", (req as any).user);
-      console.log("File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
-      console.log("Body:", req.body);
+      // console.log("File upload request received");
+      // console.log("User:", (req as any).user);
+      // console.log("File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
+      // console.log("Body:", req.body);
       
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });

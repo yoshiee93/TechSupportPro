@@ -13,7 +13,7 @@ export class OpenAIBarcodeService {
 
   async processImageFile(filePath: string): Promise<{ success: boolean; barcode?: string; error?: string }> {
     try {
-      console.log('Processing barcode image with OpenAI Vision:', filePath);
+      // console.log('Processing barcode image with OpenAI Vision:', filePath);
       
       // Optimize image for better vision processing
       const optimizedPath = await this.optimizeImage(filePath);
@@ -43,7 +43,7 @@ export class OpenAIBarcodeService {
       const base64Image = imageBuffer.toString('base64');
       const mimeType = this.getMimeType(imagePath);
       
-      console.log('Sending image to OpenAI Vision API for barcode detection...');
+      // console.log('Sending image to OpenAI Vision API for barcode detection...');
       
       const response = await this.openai.chat.completions.create({
         model: "gpt-4o",
@@ -98,7 +98,7 @@ Focus on accuracy - only return codes you can clearly read.`
       const cleanBarcode = this.cleanBarcodeText(detectedText);
       
       if (cleanBarcode) {
-        console.log('OpenAI detected barcode:', cleanBarcode);
+        // console.log('OpenAI detected barcode:', cleanBarcode);
         return {
           success: true,
           barcode: cleanBarcode
@@ -158,7 +158,7 @@ Focus on accuracy - only return codes you can clearly read.`
         .jpeg({ quality: 95 })
         .toFile(outputPath);
       
-      console.log('Created AI-optimized image');
+      // console.log('Created AI-optimized image');
       return outputPath;
     } catch (error) {
       console.error('Image optimization error:', error);
@@ -187,7 +187,7 @@ Focus on accuracy - only return codes you can clearly read.`
     for (const filePath of filePaths) {
       try {
         await fs.unlink(filePath);
-        console.log('Cleaned up file:', filePath);
+        // console.log('Cleaned up file:', filePath);
       } catch (error) {
         // Ignore cleanup errors
       }

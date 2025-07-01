@@ -52,7 +52,7 @@ export class Logger {
     } else if (level === LogLevel.WARN) {
       console.warn(logMessage);
     } else {
-      console.log(logMessage);
+      // console.log(logMessage);
     }
   }
 

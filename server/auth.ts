@@ -213,7 +213,7 @@ async function createMasterAdmin() {
     const adminExists = users.some(user => user.role === "admin" && user.isActive);
     
     if (!adminExists) {
-      console.log("Creating master admin account...");
+      // console.log("Creating master admin account...");
       const hashedPassword = await hashPassword("admin123");
       
       await storage.createUser({
@@ -226,10 +226,10 @@ async function createMasterAdmin() {
         isActive: true,
       });
       
-      console.log("Master admin account created:");
-      console.log("Username: admin");
-      console.log("Password: admin123");
-      console.log("Please change the password after first login!");
+      // console.log("Master admin account created:");
+      // console.log("Username: admin");
+      // console.log("Password: admin123");
+      // console.log("Please change the password after first login!");
     }
   } catch (error) {
     console.error("Error creating master admin:", error);

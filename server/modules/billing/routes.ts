@@ -213,9 +213,9 @@ router.get("/billable-items/ticket/:ticketId", requireAuth, async (req, res) => 
 // Add billable item to ticket
 router.post("/billable-items", requireAuth, async (req, res) => {
   try {
-    console.log("Received billable item data:", req.body);
+    // console.log("Received billable item data:", req.body);
     const data = insertBillableItemSchema.parse(req.body);
-    console.log("Parsed billable item data:", data);
+    // console.log("Parsed billable item data:", data);
     const item = await storage.createBillableItem(data);
     res.json(item);
   } catch (error) {
