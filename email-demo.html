@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email-Integrated Ticketing System Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200">
+            <div class="p-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-800">Email Ticketing</h2>
+            </div>
+            
+            <!-- Email Accounts -->
+            <div class="p-4">
+                <h3 class="text-sm font-medium text-gray-600 mb-3">Email Accounts</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center p-2 rounded-md bg-blue-50 border border-blue-200">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm">support@techfix.com</span>
+                        <span class="ml-auto text-xs bg-blue-100 px-2 py-1 rounded">12</span>
+                    </div>
+                    <div class="flex items-center p-2 rounded-md hover:bg-gray-50">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm">sales@techfix.com</span>
+                        <span class="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">3</span>
+                    </div>
+                    <div class="flex items-center p-2 rounded-md hover:bg-gray-50">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                        <span class="text-sm">billing@techfix.com</span>
+                        <span class="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Folders -->
+            <div class="p-4 border-t">
+                <h3 class="text-sm font-medium text-gray-600 mb-3">Folders</h3>
+                <div class="space-y-1">
+                    <div class="flex items-center p-2 rounded-md bg-blue-50 text-blue-700">
+                        <i class="fas fa-inbox mr-2"></i>
+                        <span class="text-sm">All Inboxes</span>
+                        <span class="ml-auto text-xs">16</span>
+                    </div>
+                    <div class="flex items-center p-2 rounded-md hover:bg-gray-50 text-gray-700">
+                        <i class="fas fa-ticket-alt mr-2"></i>
+                        <span class="text-sm">Open Tickets</span>
+                        <span class="ml-auto text-xs">8</span>
+                    </div>
+                    <div class="flex items-center p-2 rounded-md hover:bg-gray-50 text-gray-700">
+                        <i class="fas fa-clock mr-2"></i>
+                        <span class="text-sm">Pending</span>
+                        <span class="ml-auto text-xs">4</span>
+                    </div>
+                    <div class="flex items-center p-2 rounded-md hover:bg-gray-50 text-gray-700">
+                        <i class="fas fa-check mr-2"></i>
+                        <span class="text-sm">Resolved</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email List -->
+        <div class="w-96 bg-white border-r border-gray-200">
+            <div class="p-4 border-b bg-gray-50">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-medium">Inbox</h3>
+                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                        <i class="fas fa-plus mr-1"></i> New
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="text" placeholder="Search emails..." 
+                           class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- Email Items -->
+            <div class="overflow-y-auto flex-1">
+                <!-- Email 1 - New Ticket -->
+                <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer bg-blue-50">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-medium mr-3">
+                            JD
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">John Doe</h4>
+                                <span class="text-xs text-gray-500">2m ago</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-2">NEW TICKET</span>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">HIGH</span>
+                            </div>
+                            <p class="text-sm text-gray-900 font-medium mb-1">Laptop won't start - urgent help needed</p>
+                            <p class="text-xs text-gray-600 line-clamp-2">Hi, my work laptop suddenly stopped working this morning. It won't power on at all, no lights or sounds. I have an important...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 2 - Existing Ticket Reply -->
+                <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium mr-3">
+                            SM
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">Sarah Miller</h4>
+                                <span class="text-xs text-gray-500">15m ago</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2">TICKET #1234</span>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">MEDIUM</span>
+                            </div>
+                            <p class="text-sm text-gray-900 font-medium mb-1">Re: Screen flickering issue - follow up</p>
+                            <p class="text-xs text-gray-600 line-clamp-2">Thanks for the quick response! The driver update worked perfectly. The screen hasn't flickered once since yesterday...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 3 - Customer Reply -->
+                <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium mr-3">
+                            MJ
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">Mike Johnson</h4>
+                                <span class="text-xs text-gray-500">1h ago</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-2">TICKET #1231</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">LOW</span>
+                            </div>
+                            <p class="text-sm text-gray-900 font-medium mb-1">Re: Printer setup questions</p>
+                            <p class="text-xs text-gray-600 line-clamp-2">Perfect! The printer is working great now. One quick question - how do I set it as the default printer for my...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 4 - Internal Note -->
+                <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium mr-3">
+                            TR
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">Tech Rep (Internal)</h4>
+                                <span class="text-xs text-gray-500">2h ago</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-2">INTERNAL</span>
+                                <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">NOTE</span>
+                            </div>
+                            <p class="text-sm text-gray-900 font-medium mb-1">Ticket #1229 - Parts ordered</p>
+                            <p class="text-xs text-gray-600 line-clamp-2">Ordered replacement motherboard for the Johnson repair. ETA is 3-5 business days. Customer has been notified...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email View & Ticket Integration -->
+        <div class="flex-1 flex flex-col">
+            <!-- Email Header -->
+            <div class="p-4 border-b bg-white">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-medium mr-3">
+                            JD
+                        </div>
+                        <div>
+                            <h3 class="font-medium">John Doe</h3>
+                            <p class="text-sm text-gray-600">john.doe@company.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="bg-green-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-ticket-alt mr-1"></i> Create Ticket
+                        </button>
+                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-reply mr-1"></i> Reply
+                        </button>
+                        <button class="border border-gray-300 px-3 py-1 rounded text-sm">
+                            <i class="fas fa-archive mr-1"></i> Archive
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-medium">Laptop won't start - urgent help needed</h2>
+                    <span class="text-sm text-gray-500">Today at 3:42 PM</span>
+                </div>
+            </div>
+
+            <!-- Email Content & Ticket Panel -->
+            <div class="flex-1 flex">
+                <!-- Email Thread -->
+                <div class="flex-1 p-6 overflow-y-auto">
+                    <div class="max-w-3xl">
+                        <!-- Original Email -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium">John Doe</span>
+                                <span class="text-xs text-gray-500">Today at 3:42 PM</span>
+                            </div>
+                            <div class="prose prose-sm">
+                                <p>Hi,</p>
+                                <p>My work laptop suddenly stopped working this morning. It won't power on at all - no lights, no sounds, nothing. I tried different power outlets and checked the power cable, but still nothing.</p>
+                                <p>This is really urgent as I have a client presentation at 2 PM today and all my files are on this laptop. Can someone please help me ASAP?</p>
+                                <p>Laptop details:<br>
+                                - Dell Latitude 7420<br>
+                                - About 2 years old<br>
+                                - Has been working fine until this morning</p>
+                                <p>Thanks,<br>John</p>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-gray-200">
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-paperclip mr-1"></i> 2 attachments
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- AI Suggestion Box -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-robot text-blue-600 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-medium text-blue-900 mb-2">AI Analysis & Suggestions</h4>
+                                    <div class="space-y-2 text-sm text-blue-800">
+                                        <p><strong>Issue Category:</strong> Hardware - Power/Boot Failure</p>
+                                        <p><strong>Priority:</strong> High (urgent business need)</p>
+                                        <p><strong>Suggested Actions:</strong></p>
+                                        <ul class="ml-4 space-y-1">
+                                            <li>• Check power adapter with multimeter</li>
+                                            <li>• Test with known working power adapter</li>
+                                            <li>• Remove battery and test direct power</li>
+                                            <li>• Schedule on-site visit if no immediate fix</li>
+                                        </ul>
+                                        <p><strong>Estimated Resolution:</strong> 2-4 hours (including travel time)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reply Composer -->
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <div class="mb-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="font-medium">Reply to John Doe</h4>
+                                    <div class="flex items-center space-x-2">
+                                        <button class="text-sm text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-template mr-1"></i> Use Template
+                                        </button>
+                                        <button class="text-sm text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-magic mr-1"></i> AI Assist
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                    <span>To: john.doe@company.com</span>
+                                    <span>CC: support@techfix.com</span>
+                                </div>
+                            </div>
+                            <textarea class="w-full h-32 p-3 border border-gray-300 rounded-md resize-none" 
+                                      placeholder="Hi John,
+
+I understand this is urgent and I'm here to help get your laptop working immediately.
+
+Based on your description, this appears to be a power-related issue. I'll walk you through some quick troubleshooting steps we can try right now over the phone:
+
+1. Let's first test with a different power adapter if you have one available
+2. Try removing the battery and connecting directly to power
+3. Check for any LED indicators when plugged in
+
+If these steps don't resolve it, I can be at your location within 30 minutes with replacement parts and a loaner laptop to ensure you're ready for your 2 PM presentation.
+
+Please call me directly at (555) 123-4567 so we can start troubleshooting immediately.
+
+Best regards,
+Tech Support Team"></textarea>
+                            <div class="flex items-center justify-between mt-3">
+                                <div class="flex items-center space-x-3">
+                                    <button class="text-sm text-gray-600 hover:text-gray-800">
+                                        <i class="fas fa-paperclip mr-1"></i> Attach
+                                    </button>
+                                    <button class="text-sm text-gray-600 hover:text-gray-800">
+                                        <i class="fas fa-image mr-1"></i> Insert Image
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="border border-gray-300 px-4 py-2 rounded text-sm">Save Draft</button>
+                                    <button class="bg-blue-600 text-white px-4 py-2 rounded text-sm">Send Reply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ticket Integration Panel -->
+                <div class="w-80 bg-gray-50 border-l border-gray-200 p-4">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                        <h3 class="font-medium mb-3">Ticket Information</h3>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                                <select class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                                    <option>New</option>
+                                    <option>In Progress</option>
+                                    <option>Pending</option>
+                                    <option>Resolved</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Priority</label>
+                                <select class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                                    <option>High</option>
+                                    <option>Medium</option>
+                                    <option>Low</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Assigned To</label>
+                                <select class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                                    <option>Unassigned</option>
+                                    <option>John Smith</option>
+                                    <option>Sarah Wilson</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Category</label>
+                                <select class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                                    <option>Hardware</option>
+                                    <option>Software</option>
+                                    <option>Network</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full bg-green-600 text-white py-2 rounded text-sm mt-4">
+                            Create Ticket #1235
+                        </button>
+                    </div>
+
+                    <!-- Customer Info -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+                        <h3 class="font-medium mb-3">Customer Information</h3>
+                        <div class="space-y-2 text-sm">
+                            <div>
+                                <span class="text-gray-600">Name:</span>
+                                <span class="ml-2">John Doe</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Email:</span>
+                                <span class="ml-2">john.doe@company.com</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Phone:</span>
+                                <span class="ml-2">(555) 123-4567</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Previous Tickets:</span>
+                                <span class="ml-2">3 tickets</span>
+                            </div>
+                        </div>
+                        <button class="w-full border border-gray-300 py-1 rounded text-sm mt-3">
+                            View Customer Profile
+                        </button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h3 class="font-medium mb-3">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <button class="w-full text-left text-sm p-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-phone mr-2 text-green-600"></i> Call Customer
+                            </button>
+                            <button class="w-full text-left text-sm p-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-calendar mr-2 text-blue-600"></i> Schedule Visit
+                            </button>
+                            <button class="w-full text-left text-sm p-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-laptop mr-2 text-purple-600"></i> Remote Access
+                            </button>
+                            <button class="w-full text-left text-sm p-2 hover:bg-gray-50 rounded">
+                                <i class="fas fa-file mr-2 text-orange-600"></i> Generate Quote
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile responsive note -->
+    <div class="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-lg shadow-lg max-w-sm lg:hidden">
+        <p class="text-sm">This demo is optimized for desktop viewing. Mobile version would have collapsible panels.</p>
+    </div>
+</body>
+</html>
