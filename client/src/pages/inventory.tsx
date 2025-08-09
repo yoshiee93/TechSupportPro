@@ -286,7 +286,6 @@ export default function Inventory() {
             >
               Test Form Prefill (Debug)
             </Button>
-            </div>
           </div>
 
           {/* Low Stock Alerts */}
