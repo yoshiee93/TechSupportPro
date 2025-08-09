@@ -1,117 +1,147 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User, Client, Ticket, Part, Device, TimeLog } from '../types';
 
-// API Configuration
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3000/api'  // Development
-  : 'https://your-production-url.com/api';  // Production
+const API_BASE_URL = __DEV__ ? 'http://localhost:3000/api' : '/api';
 
 class ApiService {
-  private async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = await AsyncStorage.getItem('authToken');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  }
+  private async fetch(endpoint: string, options: RequestInit = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
-    const headers = await this.getAuthHeaders();
-    
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-    });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // Authentication
-  async login(username: string, password: string) {
-    return this.request('/auth/login', {
+  async login(username: string, password: string): Promise<User> {
+    return this.fetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
   }
 
-  async logout() {
-    return this.request('/auth/logout', { method: 'POST' });
-  }
-
-  // Tickets
-  async getTickets() {
-    return this.request('/tickets');
-  }
-
-  async getTicket(id: string) {
-    return this.request(`/tickets/${id}`);
-  }
-
-  async updateTicket(id: string, data: any) {
-    return this.request(`/tickets/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
+  async logout(): Promise<void> {
+    return this.fetch('/auth/logout', {
+      method: 'POST',
     });
   }
 
-  // Parts/Inventory
-  async getParts() {
-    return this.request('/parts');
+  async getCurrentUser(): Promise<User> {
+    return this.fetch('/auth/me');
   }
 
-  async searchPartByBarcode(barcode: string) {
-    return this.request(`/parts/search?barcode=${barcode}`);
+  // Tickets
+  async getTickets(): Promise<Ticket[]> {
+    return this.fetch('/tickets');
+  }
+
+  async getTicket(id: string): Promise<Ticket> {
+    return this.fetch(`/tickets/${id}`);
+  }
+
+  async createTicket(ticket: Partial<Ticket>): Promise<Ticket> {
+    return this.fetch('/tickets', {
+      method: 'POST',
+      body: JSON.stringify(ticket),
+    });
+  }
+
+  async updateTicket(id: string, updates: Partial<Ticket>): Promise<Ticket> {
+    return this.fetch(`/tickets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
   }
 
   // Clients
-  async getClients() {
-    return this.request('/clients');
+  async getClients(): Promise<Client[]> {
+    return this.fetch('/clients');
   }
 
-  async getClient(id: string) {
-    return this.request(`/clients/${id}`);
+  async getClient(id: string): Promise<Client> {
+    return this.fetch(`/clients/${id}`);
   }
 
-  // File uploads
-  async uploadPhoto(uri: string, ticketId?: string): Promise<{ url: string }> {
+  async createClient(client: Partial<Client>): Promise<Client> {
+    return this.fetch('/clients', {
+      method: 'POST',
+      body: JSON.stringify(client),
+    });
+  }
+
+  // Devices
+  async getDevices(): Promise<Device[]> {
+    return this.fetch('/devices');
+  }
+
+  async getDevice(id: string): Promise<Device> {
+    return this.fetch(`/devices/${id}`);
+  }
+
+  // Parts/Inventory
+  async getParts(): Promise<Part[]> {
+    return this.fetch('/parts');
+  }
+
+  async getPart(id: string): Promise<Part> {
+    return this.fetch(`/parts/${id}`);
+  }
+
+  async getPartByBarcode(barcode: string): Promise<Part | null> {
+    try {
+      return await this.fetch(`/parts/barcode/${barcode}`);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Time Tracking
+  async getTimeLogs(ticketId: string): Promise<TimeLog[]> {
+    return this.fetch(`/time-logs?ticketId=${ticketId}`);
+  }
+
+  async startTimeLog(ticketId: string): Promise<TimeLog> {
+    return this.fetch('/time-logs', {
+      method: 'POST',
+      body: JSON.stringify({ ticketId }),
+    });
+  }
+
+  async stopTimeLog(id: string): Promise<TimeLog> {
+    return this.fetch(`/time-logs/${id}/stop`, {
+      method: 'PATCH',
+    });
+  }
+
+  // Photo upload
+  async uploadPhoto(ticketId: string, photoUri: string): Promise<any> {
     const formData = new FormData();
-    formData.append('file', {
-      uri,
+    formData.append('photo', {
+      uri: photoUri,
       type: 'image/jpeg',
       name: 'photo.jpg',
     } as any);
 
-    if (ticketId) {
-      formData.append('ticketId', ticketId);
-    }
-
-    const token = await AsyncStorage.getItem('authToken');
-    
-    const response = await fetch(`${API_BASE_URL}/attachments/upload`, {
+    return fetch(`${API_BASE_URL}/tickets/${ticketId}/photos`, {
       method: 'POST',
       body: formData,
       headers: {
         'Content-Type': 'multipart/form-data',
-        ...(token && { Authorization: `Bearer ${token}` }),
       },
     });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-
-    return response.json();
   }
 }
 
-export const apiService = new ApiService();
-export default apiService;
+export default new ApiService();

@@ -1,26 +1,29 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: string;
-}
+import apiService from '../services/api';
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     checkAuthStatus();
@@ -28,72 +31,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      const userData = await AsyncStorage.getItem('userData');
-      
-      if (token && userData) {
-        setUser(JSON.parse(userData));
+      const savedUser = await AsyncStorage.getItem('user');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('Error checking auth status:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string) => {
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch('http://your-api-url/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        await AsyncStorage.setItem('authToken', data.token);
-        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-        setUser(data.user);
-        return true;
-      }
-      return false;
+      const userData = await apiService.login(username, password);
+      setUser(userData);
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
-      console.error('Login failed:', error);
-      return false;
+      console.error('Login error:', error);
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove(['authToken', 'userData']);
+      await apiService.logout();
       setUser(null);
+      await AsyncStorage.removeItem('user');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
+      // Still clear local storage even if API call fails
+      setUser(null);
+      await AsyncStorage.removeItem('user');
     }
   };
 
-  return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        login, 
-        logout, 
-        loading 
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    logout,
+  };
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

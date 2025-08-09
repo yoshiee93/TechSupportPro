@@ -1,37 +1,47 @@
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { View, Text } from 'react-native';
 
-// Screens
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { RootStackParamList } from './src/types';
+
+// Import screens
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import TicketsScreen from './src/screens/TicketsScreen';
 import TicketDetailScreen from './src/screens/TicketDetailScreen';
+import BarcodeScannerScreen from './src/screens/BarcodeScannerScreen';
 import InventoryScreen from './src/screens/InventoryScreen';
 import ClientsScreen from './src/screens/ClientsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import BarcodeScannerScreen from './src/screens/BarcodeScannerScreen';
 
-// Context
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
+// Create a React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 3,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
-function MainTabs() {
+function LoadingScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Loading...</Text>
+    </View>
+  );
+}
+
+function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -55,11 +65,16 @@ function MainTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: 'gray',
+        tabBarInactiveTintColor: '#6B7280',
+        tabBarStyle: {
+          backgroundColor: 'white',
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+        },
         headerStyle: {
           backgroundColor: '#3B82F6',
         },
-        headerTintColor: '#fff',
+        headerTintColor: 'white',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -75,38 +90,54 @@ function MainTabs() {
 }
 
 function AppNavigator() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isAuthenticated ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
-      ) : (
-        <>
-          <Stack.Screen name="Main" component={MainTabs} />
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#3B82F6',
+          },
+          headerTintColor: 'white',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen 
+              name="MainTabs" 
+              component={MainTabNavigator}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="TicketDetail" 
+              component={TicketDetailScreen}
+              options={({ route }) => ({ 
+                title: `Ticket #${route.params?.ticketId?.slice(-6) || ''}` 
+              })}
+            />
+            <Stack.Screen 
+              name="BarcodeScanner" 
+              component={BarcodeScannerScreen}
+              options={{ title: 'Scan Barcode' }}
+            />
+          </>
+        ) : (
           <Stack.Screen 
-            name="TicketDetail" 
-            component={TicketDetailScreen}
-            options={{ 
-              headerShown: true,
-              title: 'Ticket Details',
-              headerStyle: { backgroundColor: '#3B82F6' },
-              headerTintColor: '#fff',
-            }}
+            name="Login" 
+            component={LoginScreen}
+            options={{ headerShown: false }}
           />
-          <Stack.Screen 
-            name="BarcodeScanner" 
-            component={BarcodeScannerScreen}
-            options={{ 
-              headerShown: true,
-              title: 'Scan Barcode',
-              headerStyle: { backgroundColor: '#3B82F6' },
-              headerTintColor: '#fff',
-            }}
-          />
-        </>
-      )}
-    </Stack.Navigator>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -114,10 +145,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-        <StatusBar style="auto" />
+        <AppNavigator />
+        <StatusBar style="light" />
       </AuthProvider>
     </QueryClientProvider>
   );
