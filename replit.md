@@ -7,12 +7,13 @@ TechFix Pro is a comprehensive IT support management platform built for PC repai
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS with Shadcn UI components
+- **Web App**: React 18 with TypeScript
+- **Mobile App**: React Native with Expo for field technicians
+- **Styling**: Tailwind CSS with Shadcn UI components (web), React Native styling (mobile)
 - **State Management**: TanStack Query (React Query) for server state
-- **Routing**: Wouter for client-side routing
+- **Routing**: Wouter for client-side routing (web), React Navigation (mobile)
 - **Forms**: React Hook Form with Zod validation
-- **Mobile Support**: Responsive design with dedicated mobile components
+- **Mobile Support**: Dedicated React Native app with native device features
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
@@ -27,6 +28,25 @@ TechFix Pro is a comprehensive IT support management platform built for PC repai
 - **Connection**: Neon serverless PostgreSQL
 - **Schema**: Type-safe schema definitions shared between client and server
 - **Migrations**: Automated database schema updates via Drizzle Kit
+
+## Project Structure
+
+### Organized Application Architecture
+```
+TechFix Pro/
+├── client/                 # Web application (React)
+├── server/                 # Backend API (Node.js/Express)  
+├── mobile/                 # Mobile app (React Native)
+├── shared/                 # Shared schemas and types
+├── migrations/             # Database migrations
+└── scripts/                # Utility scripts
+```
+
+Each module is completely isolated:
+- **Web app changes** don't affect mobile app
+- **Mobile app changes** don't affect web app  
+- **Backend changes** use versioned APIs for compatibility
+- **Shared types** maintain consistency across platforms
 
 ## Key Components
 
@@ -72,10 +92,13 @@ TechFix Pro is a comprehensive IT support management platform built for PC repai
    - Voice command navigation
    - Automated ticket creation from voice input
 
-4. **Mobile Optimization**
-   - Responsive design for all screen sizes
-   - Mobile-specific UI components
-   - Touch-optimized interfaces
+4. **Mobile Application**
+   - Native React Native app for field technicians
+   - Barcode scanning with device camera
+   - Offline capability with sync when connected
+   - GPS tracking and location services
+   - Push notifications for urgent tickets
+   - Photo capture and attachment upload
 
 ## Data Flow
 
